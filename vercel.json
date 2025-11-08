@@ -1,0 +1,10 @@
+
+{
+  "builds": [
+    { "src": "gold_trade/wsgi.py", "use": "@vercel/python" },
+    { "src": "manage.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "gold_trade/wsgi.py" }
+  ]
+}
