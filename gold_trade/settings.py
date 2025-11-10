@@ -172,12 +172,6 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'replace-me-in-production')
 import os
 from django.contrib.auth import get_user_model
 
-if os.getenv("AUTO_CREATE_SUPERUSER", "False") == "True":
-    User = get_user_model()
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser("admin", "hifas86@gmail.com", "Admin@123")
-
-
 import sys
 
 LOGGING = {
