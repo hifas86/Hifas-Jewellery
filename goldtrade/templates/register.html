@@ -104,7 +104,7 @@
     <p style="color:#d9b76e;">Join Digital Gold Trade</p>
     <p style="color:#d9b76e;">Hifas Jewellery</p>
 
-    <form method="POST">
+    <form method="POST" action="">
         {% csrf_token %}
         {% for message in messages %}
             <div class="alert alert-danger">{{ message }}</div>
@@ -121,15 +121,20 @@
         </div>
 
         <div class="input-group">
-            <input type="password" name="password1" required placeholder=" ">
+            <input type="password" name="password" required placeholder=" ">
             <label>Password</label>
         </div>
 
         <div class="input-group">
-            <input type="password" name="password2" required placeholder=" ">
+            <input type="password" name="confirm_password" required placeholder=" ">
             <label>Confirm Password</label>
         </div>
 
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
+                {{ message }}
+              </div>
+        {% endfor %}
         <button type="submit" class="btn-gold w-100">Register</button>
     </form>
 
