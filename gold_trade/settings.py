@@ -169,3 +169,31 @@ if 'DATABASE_URL' in os.environ:
 # ✅ Secret Key (don’t hardcode for deployment)
 SECRET_KEY = os.getenv('SECRET_KEY', 'replace-me-in-production')
 
+import sys
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} [{module}] {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
