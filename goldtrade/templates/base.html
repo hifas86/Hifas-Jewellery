@@ -219,7 +219,7 @@ body {
 </div>
 
 </div>
-
+{% if user.is_authenticated %}
 <script>
 function fetchGoldRates() {
     fetch("{% url 'refresh_rates' %}")
