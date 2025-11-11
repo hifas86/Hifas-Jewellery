@@ -25,3 +25,6 @@ class GoldRateAdmin(admin.ModelAdmin):
 
 admin.site.register(Wallet)
 admin.site.register(Transaction)
+admin.site.site_header = "Hifas Jewellery Admin Panel 💎"
+admin.site.site_title = "Hifas Jewellery Admin"
+admin.site.index_title = "Welcome to Hifas Jewellery Dashboard"
