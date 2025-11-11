@@ -71,7 +71,8 @@ def register_view(request):
                 messages.success(request, "Registration successful! Welcome to Hifas Jewellery.")
                 return redirect("dashboard")
         else:
-            messages.error(request, "There was an error creating your account. Please check the details.")
+            print(form.errors)  # 🧠 Log the real reason to console
+            messages.error(request, f"There was an error creating your account: {form.errors}")
     else:
         form = CustomUserCreationForm()
 
