@@ -130,11 +130,6 @@
             <label>Confirm Password</label>
         </div>
 
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}">
-                {{ message }}
-              </div>
-        {% endfor %}
         <button type="submit" class="btn-gold w-100">Register</button>
     </form>
 
