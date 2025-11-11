@@ -13,7 +13,7 @@ def reports_placeholder(request):
     return HttpResponse("Reports page coming soon.")
 
 urlpatterns = [
-    path('admin/', admin.site.admin_view(admin.site.index), name='admin'),
+    path('admin/', admin.site.urls),
     path('', include('goldtrade.urls')),
     path('', app_views.dashboard, name='dashboard'),
 
