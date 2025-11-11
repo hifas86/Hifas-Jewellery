@@ -68,11 +68,11 @@ def register_view(request):
             return redirect("register")
 
         user = User.objects.create_user(username=username, email=email, password=password1)
-        user.is_active = False  # deactivate until verified
+        user = form.save(commit=False)
+        user.is_active = True  # Directly activate user
         user.save()
-
-        send_verification_email(request, user)
-        return redirect("email_verification_pending")
+        login(request, user)
+        return redirect('dashboard')
 
     return render(request, "register.html")
 
