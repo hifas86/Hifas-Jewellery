@@ -10,7 +10,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required
-from .utils import send_verification_email
 
 def login_view(request):
     if request.method == 'POST':
@@ -60,7 +59,6 @@ def register_view(request):
                 # Verification required
                 user.is_active = False
                 user.save()
-                send_verification_email(request, user)
                 messages.success(request, "Account created! Please check your email to verify your account.")
                 return redirect("email_verification_pending")
             else:
