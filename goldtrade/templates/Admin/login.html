@@ -1,0 +1,77 @@
+{% extends "admin/login.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<style>
+body.login {
+    background: radial-gradient(circle at top, #1b2439, #0d1221);
+    animation: bgMove 7s infinite alternate ease-in-out;
+}
+@keyframes bgMove {
+    0% {background-position: 0 0;}
+    100% {background-position: 100% 100%;}
+}
+
+#content-main {
+    background: rgba(255,255,255,0.08);
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 0 25px rgba(255,215,0,0.15);
+    border: 1px solid rgba(255,215,0,0.3);
+    backdrop-filter: blur(10px);
+}
+
+#header {
+    background: linear-gradient(90deg, #cfa842, #a87a1b);
+    color: white;
+    text-align: center;
+}
+
+.login #header h1 {
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+#login-form input {
+    border: 1px solid gold !important;
+    background: transparent !important;
+    color: white !important;
+    border-radius: 6px;
+}
+
+.submit-row input {
+    background: linear-gradient(90deg, #cfa842, #a87a1b) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: bold;
+    transition: 0.3s;
+}
+.submit-row input:hover {
+    background: linear-gradient(90deg, #ffce50, #b98a1d) !important;
+    transform: translateY(-2px);
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 15px;
+}
+.logo img {
+    height: 100px;
+    border-radius: 12px;
+    animation: glow 2s infinite ease-in-out;
+}
+@keyframes glow {
+    0% {filter: drop-shadow(0 0 2px gold);}
+    50% {filter: drop-shadow(0 0 15px gold);}
+    100% {filter: drop-shadow(0 0 2px gold);}
+}
+</style>
+{% endblock %}
+
+{% block branding %}
+<div class="logo">
+    <img src="{% static 'images/hifas_logo.png' %}" alt="Hifas Jewellery Logo">
+    <h1 style="color:goldenrod; font-weight:600;">Hifas Jewellery Admin Panel</h1>
+</div>
+{% endblock %}
