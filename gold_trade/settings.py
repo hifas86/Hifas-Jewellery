@@ -145,6 +145,8 @@ EMAIL_HOST_PASSWORD = 'pouv abzh xnkp whzi'  # use an app password
 # Email sender identities
 DEFAULT_FROM_EMAIL = "Hifas Jewellery <hifas86@gmail.com>"
 SERVER_EMAIL = "Hifas Jewellery <hifas86@gmail.com>"  # for error emails
+EMAIL_VERIFICATION_ENABLED = False
+
 
 import os
 import dj_database_url
