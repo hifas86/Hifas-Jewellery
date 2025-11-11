@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from goldtrade import views as app_views
 from goldtrade import views_auth as auth_views
 from django.http import HttpResponse
@@ -14,6 +14,7 @@ def reports_placeholder(request):
 
 urlpatterns = [
     path('admin/', admin.site.admin_view(admin.site.index), name='admin'),
+    path('', include('goldtrade.urls')),
     path('', app_views.dashboard, name='dashboard'),
 
     path('buy/', app_views.buy_gold, name='buy_gold'),
