@@ -1,5 +1,10 @@
 from django.urls import path
 from . import views, views_auth  # ✅ import both view files
+from .views import  (
+    approve_deposit, reject_deposit, staff_deposits,
+    staff_withdrawals, approve_withdrawal, reject_withdrawal
+)
+
 
 urlpatterns = [
     # 🔐 Authentication routes
