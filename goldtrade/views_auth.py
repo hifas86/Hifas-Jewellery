@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required
+from .utils import send_verification_email
 
 def login_view(request):
     if request.method == 'POST':
@@ -49,32 +50,32 @@ def send_verification_email(request, user):
 
 # ✅ Registration view (updated to include email verification)
 def register_view(request):
+    """Handle user registration with optional email verification."""
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password1 = request.POST.get("password1")
-        password2 = request.POST.get("password2")
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
 
-        if password1 != password2:
-            messages.error(request, "Passwords do not match.")
-            return redirect("register")
+            if getattr(settings, "EMAIL_VERIFICATION_ENABLED", False):
+                # Verification required
+                user.is_active = False
+                user.save()
+                send_verification_email(request, user)
+                messages.success(request, "Account created! Please check your email to verify your account.")
+                return redirect("email_verification_pending")
+            else:
+                # No verification — activate immediately
+                user.is_active = True
+                user.save()
+                login(request, user)
+                messages.success(request, "Registration successful! Welcome to Hifas Jewellery.")
+                return redirect("dashboard")
+        else:
+            messages.error(request, "There was an error creating your account. Please check the details.")
+    else:
+        form = CustomUserCreationForm()
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists.")
-            return redirect("register")
-
-        if User.objects.filter(email=email).exists():
-            messages.error(request, "Email already registered.")
-            return redirect("register")
-
-        user = User.objects.create_user(username=username, email=email, password=password1)
-        user = form.save(commit=False)
-        user.is_active = True  # Directly activate user
-        user.save()
-        login(request, user)
-        return redirect('dashboard')
-
-    return render(request, "register.html")
+    return render(request, "auth/register.html", {"form": form})
 
 
 # ✅ Email verification handler
