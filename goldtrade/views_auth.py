@@ -72,7 +72,10 @@ def register_view(request):
                 return redirect("dashboard")
         else:
             print(form.errors)  # 🧠 Log the real reason to console
-            messages.error(request, f"There was an error creating your account: {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
+
     else:
         form = CustomUserCreationForm()
 
