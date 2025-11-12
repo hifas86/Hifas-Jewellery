@@ -1,24 +1,22 @@
 # goldtrade/views.py
 from decimal import Decimal, ROUND_DOWN
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.utils.timezone import localtime, now, timedelta
 from django.db import transaction as db_tx
 from django.contrib.admin.views.decorators import staff_member_required
-from .models import BankDeposit, Wallet
-from .models import Wallet, Transaction, GoldRate
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.conf import settings
-from django.core.mail import send_mail, EmailMultiAlternatives
 from django.utils.html import strip_tags
 from django.template.loader import render_to_string
+from django.views.decorators.cache import cache_page
 
+from .models import BankDeposit, Wallet, Transaction, GoldRate
 
-
+# ------------------------- Email Helper --------------------------
 def notify_user_email(to_email: str, subject: str, html_body: str):
     """
     Sends both HTML and plain-text fallback. Never raises to users.
@@ -32,7 +30,7 @@ def notify_user_email(to_email: str, subject: str, html_body: str):
         # Keep silent in production paths to avoid breaking user flow
         pass
 
-
+# ------------------------- Gold Price Helper ---------------------
 def get_gold_price():
     gold = GoldRate.objects.order_by('-last_updated').first()
     if gold:
@@ -42,8 +40,7 @@ def get_gold_price():
             'last_updated': gold.last_updated
         }
     return {'buy_rate': Decimal('0'), 'sell_rate': Decimal('0'), 'last_updated': None}
-
-
+    
 # --- wallet mode helper (session) --------------------------------------------
 def _get_current_mode(request) -> bool:
     """Return True if DEMO, False if REAL."""
@@ -60,7 +57,6 @@ def _get_selected_wallet(request):
     _ensure_both_wallets(request)
     return wallet, is_demo
 
-
 # --- switch wallet (Demo/Real) -----------------------------------------------
 @login_required
 def switch_wallet(request, mode):
@@ -73,12 +69,9 @@ def switch_wallet(request, mode):
 @login_required
 def dashboard(request):
     _ensure_both_wallets(request)
-
     demo_wallet = Wallet.objects.get(user=request.user, is_demo=True)
     real_wallet = Wallet.objects.get(user=request.user, is_demo=False)
     selected_wallet, is_demo = _get_selected_wallet(request)
-
-
     gold_rate = GoldRate.objects.order_by('-last_updated').first()
 
     context = {
@@ -94,16 +87,17 @@ def dashboard(request):
     }
     return render(request, "goldtrade/dashboard.html", context)
 
-
-# --- buy ---------------------------------------------------------------------
+# ------------------------- BUY GOLD -------------------------------
 @login_required
 def buy_gold(request):
-    wallet, _is_demo = _get_selected_wallet(request)
     rates = get_gold_price()
 
     if request.method == "POST":
         try:
             amount = Decimal(request.POST.get("amount", "0"))
+            if amount <= 0:
+                messages.error(request, "Amount must be greater than zero.")
+                return redirect("buy_gold")
         except Exception:
             messages.error(request, "Invalid amount.")
             return redirect("buy_gold")
@@ -113,41 +107,50 @@ def buy_gold(request):
             return redirect("buy_gold")
 
         grams = (amount / rates["sell_rate"]).quantize(Decimal("0.0001"), rounding=ROUND_DOWN)
+        try:
+            with db_tx.atomic():
+                wallet = Wallet.objects.select_for_update().get(user=request.user, is_demo=_get_current_mode(request))
 
-        if wallet.cash_balance < amount:
-            messages.error(request, "Insufficient balance!")
-            return redirect("buy_gold")
+                if wallet.cash_balance < amount:
+                    messages.error(request, "Insufficient balance!")
+                    return redirect("buy_gold")
 
-        wallet.cash_balance -= amount
-        wallet.gold_balance += grams
-        wallet.save()
+            wallet.cash_balance -= amount
+            wallet.gold_balance += grams
+            wallet.save(update_fields=["cash_balance", "gold_balance"])
 
-        Transaction.objects.create(
-            wallet=wallet,
-            transaction_type="BUY",
-            gold_amount=grams,
-            price_per_gram=rates["sell_rate"],
-            total_amount=amount,
-        )
+            Transaction.objects.create(
+                wallet=wallet,
+                transaction_type="BUY",
+                gold_amount=grams,
+                price_per_gram=rates["sell_rate"],
+                total_amount=amount,
+            )
+
         messages.success(request, f"Bought {grams} g of gold.")
-        return redirect("buy_gold")
+    except Exception:
+        messages.error(request, "A database error occurred during the transaction.")
+        # Log the error 'e' here if this were production code
+    return redirect("buy_gold")
 
-    return render(request, "goldtrade/buy_gold.html", {
-        "wallet": wallet,
-        "buy_rate": rates["buy_rate"],
-        "sell_rate": rates["sell_rate"],
-    })
+wallet, _ = _get_selected_wallet(request)
+return render(request, "goldtrade/buy_gold.html", {
+    "wallet": wallet,
+    "buy_rate": rates["buy_rate"],
+    "sell_rate": rates["sell_rate"],
+})
 
-
-# --- sell --------------------------------------------------------------------
+# ------------------------- SELL GOLD ------------------------------
 @login_required
 def sell_gold(request):
-    wallet, _is_demo = _get_selected_wallet(request)
     rates = get_gold_price()
 
     if request.method == "POST":
         try:
             grams = Decimal(request.POST.get("grams", "0"))
+            if grams <= 0:
+                messages.error(request, "Gold amount must be greater than zero.")
+                return redirect("sell_gold")
         except Exception:
             messages.error(request, "Invalid grams.")
             return redirect("sell_gold")
@@ -158,60 +161,77 @@ def sell_gold(request):
 
         total = (grams * rates["buy_rate"]).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
 
-        if wallet.gold_balance < grams:
-            messages.error(request, "Not enough gold to sell.")
-            return redirect("sell_gold")
+        try:
+            with db_tx.atomic():
+                wallet = Wallet.objects.select_for_update().get(user=request.user, is_demo=_get_current_mode(request))
 
-        wallet.gold_balance -= grams
-        wallet.cash_balance += total
-        wallet.save()
+                if wallet.gold_balance < grams:
+                    messages.error(request, "Not enough gold to sell.")
+                    return redirect("sell_gold")
+    
+                wallet.gold_balance -= grams
+                wallet.cash_balance += total
+                wallet.save(update_fields=["cash_balance", "gold_balance"])
+    
+                Transaction.objects.create(
+                    wallet=wallet,
+                    transaction_type="SELL",
+                    gold_amount=grams,
+                    price_per_gram=rates["buy_rate"],
+                    total_amount=total,
+                )
 
-        Transaction.objects.create(
-            wallet=wallet,
-            transaction_type="SELL",
-            gold_amount=grams,
-            price_per_gram=rates["buy_rate"],
-            total_amount=total,
-        )
-        messages.success(request, f"Sold {grams} g for {total}")
-        return redirect("sell_gold")
-
+            messages.success(request, f"Sold {grams} g for {total}")
+         except Exception as e:
+            messages.error(request, "A database error occurred during the transaction.")
+         return redirect("sell_gold")
+    
+    wallet, _ = _get_selected_wallet(request)
     return render(request, "goldtrade/sell_gold.html", {
         "wallet": wallet,
         "buy_rate": rates["buy_rate"],
         "sell_rate": rates["sell_rate"],
     })
 
-
-# --- top-up (fix Decimal error you saw) --------------------------------------
-
+# ------------------------- ADD MONEY ------------------------------
 @login_required
 def add_money(request):
     wallet = Wallet.objects.get(user=request.user, is_demo=False)
 
-    if request.method == "POST":
-        amount = Decimal(request.POST.get("amount"))
-        reference_no = request.POST.get("reference_no")
-        slip = request.FILES.get("slip")
+       if request.method == "POST":
+        raw_amount = request.POST.get("amount") # Get raw string
+        reference_no = request.POST.get("reference_no")
+        slip = request.FILES.get("slip")
+        
+        try:
+            # Safely convert and validate amount
+            if not raw_amount:
+                raise ValueError("Amount is required.")
+            amount = Decimal(raw_amount)
+            if amount <= 0:
+                raise ValueError("Amount must be greater than zero.")
+        except Exception:
+            messages.error(request, "Invalid amount.")
+            return redirect("add_money")
 
-        if not amount or not reference_no or not slip:
-            messages.error(request, "All fields are required. Please fill & upload slip.")
-            return redirect("add_money")
+        if not reference_no or not slip:
+            messages.error(request, "All fields are required. Please fill & upload slip.")
+            return redirect("add_money")
 
-        deposit = BankDeposit.objects.create(
-            user=request.user,
-            amount=amount,
-            reference_no=reference_no,
-            slip=slip,
-            status="pending"
-        )
+        BankDeposit.objects.create(
+            user=request.user,
+            amount=amount,
+            reference_no=reference_no,
+            slip=slip,
+            status="pending"
+        )
 
-        messages.success(request, "Deposit submitted ✅ Awaiting admin approval.")
-        return redirect("add_money")
+        messages.success(request, "Deposit submitted ✅ Awaiting admin approval.")
+        return redirect("add_money")
 
-    return render(request, "goldtrade/add_money.html", {
-        "wallet": wallet
-    })
+    return render(request, "goldtrade/add_money.html", {
+        "wallet": wallet
+    })
 
 @login_required
 def withdraw_money(request):
@@ -269,7 +289,6 @@ def withdraw_money(request):
 
     return render(request, "goldtrade/withdraw.html", {"wallet": wallet})
 
-from django.shortcuts import get_object_or_404
 
 @login_required
 def withdraw_confirm(request, tx_id):
@@ -281,8 +300,6 @@ def withdraw_confirm(request, tx_id):
     )
     return render(request, "goldtrade/withdraw_confirm.html", {"tx": tx})
 
-
-
 # --- transactions page (for currently selected wallet) -----------------------
 @login_required
 def transactions(request):
@@ -290,18 +307,18 @@ def transactions(request):
     tx = Transaction.objects.filter(wallet=wallet).order_by("-timestamp")
     return render(request, "goldtrade/transactions.html", {"transactions": tx})
 
-
 # --- rates refresh / history (unchanged except imports) ----------------------
-@user_passes_test(lambda u: u.is_staff)
+@cache_page(60)  # cache for 1 minute
 def refresh_rates(request):
-    gold = GoldRate.objects.order_by('-last_updated').first()
-    if not gold:
-        return JsonResponse({'error': 'No rates found'}, status=404)
-    data = {
-        'buy_rate': float(gold.buy_rate),
-        'sell_rate': float(gold.sell_rate),
-        'last_updated': localtime(gold.last_updated).strftime('%Y-%m-%d %H:%M'),
-    }
+    try:
+        gold = GoldRate.objects.latest('last_updated')
+        data = {
+            'buy_rate': float(gold.buy_rate),
+            'sell_rate': float(gold.sell_rate),
+            'last_updated': localtime(gold.last_updated).strftime("%Y-%m-%d %H:%M")
+        }
+    except GoldRate.DoesNotExist:
+        data = {'buy_rate': 0, 'sell_rate': 0, 'last_updated': None}
     return JsonResponse(data)
 
 def gold_price_history(request):
@@ -341,9 +358,6 @@ def update_gold_rate(request):
         "last_updated": latest.last_updated if latest else None
     })
 
-from django.db import transaction as db_tx
-from django.contrib.admin.views.decorators import staff_member_required
-
 @login_required
 def my_deposits(request):
     deposits = BankDeposit.objects.filter(user=request.user).order_by('-created_at')
@@ -364,50 +378,6 @@ def staff_deposits(request):
     return render(request, "goldtrade/staff_deposits.html", {"deposits": qs, "q": q, "status": status})
 
 @staff_member_required
-@db_tx.atomic
-def approve_deposit(request, pk):
-    dep = BankDeposit.objects.select_for_update().get(pk=pk)
-    if dep.status != "pending":
-        messages.warning(request, "This deposit is already processed.")
-        return redirect("staff_deposits")
-
-    # Credit REAL wallet (is_demo=False)
-    wallet, _ = Wallet.objects.get_or_create(user=dep.user, is_demo=False)
-    wallet.cash_balance = (wallet.cash_balance or 0) + dep.amount
-    wallet.save()
-
-    dep.status = "approved"
-    dep.save(update_fields=["status"])
-
-    html = render_to_string("emails/deposit_approved.html", {
-        "username": deposit.user.username,
-        "amount": deposit.amount,
-        "reference_no": deposit.reference_no,
-        "date": localtime(deposit.created_at).strftime("%Y-%m-%d %H:%M"),
-        "site_url": "https://yourwebsite.com",
-        "year": now().year,
-        "subject": "Deposit Approved – Hifas Jewellery",
-    })
-    notify_user_email(deposit.user.email, "Deposit Approved – Hifas Jewellery", html)
-
-    messages.success(request, f"Approved and credited Rs. {dep.amount:,.2f} to {dep.user.username}.")
-    return redirect("staff_deposits")
-
-@staff_member_required
-def reject_deposit(request, pk):
-    dep = BankDeposit.objects.get(pk=pk)
-    if dep.status != "pending":
-        messages.warning(request, "This deposit is already processed.")
-        return redirect("staff_deposits")
-    dep.status = "rejected"
-    dep.save(update_fields=["status"])
-    messages.info(request, "Deposit rejected.")
-    return redirect("staff_deposits")
-
-def staff_only(user):
-    return user.is_staff
-
-@staff_member_required
 def staff_withdrawals(request):
     q = request.GET.get("q", "").strip()
     qs = Transaction.objects.filter(transaction_type="WITHDRAW").select_related("wallet__user").order_by("-timestamp")
@@ -418,28 +388,47 @@ def staff_withdrawals(request):
         qs = qs.filter(status=status)
     return render(request, "goldtrade/staff_withdrawals.html", {"withdrawals": qs, "q": q, "status": status})
 
-
 @staff_member_required
+@db_tx.atomic
 def approve_withdrawal(request, pk):
-    tx = get_object_or_404(Transaction, id=pk, transaction_type="WITHDRAW")
+    # 1. Lock the transaction row
+    # Use get_object_or_404 for proper error handling
+    tx = get_object_or_404(
+        Transaction.objects.select_for_update(), 
+        id=pk, 
+        transaction_type="WITHDRAW"
+    )
+
     if tx.status != "pending":
         messages.warning(request, "Already processed.")
         return redirect("staff_withdrawals")
 
-    wallet = tx.wallet
+    # 2. Lock the associated wallet row
+    # Use tx.wallet.pk to get the correct wallet ID for locking
+    wallet = Wallet.objects.select_for_update().get(pk=tx.wallet.pk)
+
     if wallet.cash_balance < tx.total_amount:
         messages.error(request, "User wallet has insufficient balance.")
         return redirect("staff_withdrawals")
 
-    # Deduct and mark approved
+    # Deduct safely
     wallet.cash_balance -= tx.total_amount
-    wallet.save()
+    wallet.save(update_fields=['cash_balance'])
 
     tx.status = "approved"
     tx.processed_by = request.user
-    tx.save()
+    tx.save(update_fields=['status', 'processed_by'])
 
-    # ✉️ Email user
+    # Log a mirrored withdrawal for consistency
+    Transaction.objects.create(
+        wallet=wallet,
+        transaction_type="WITHDRAW",
+        total_amount=tx.total_amount,
+        remarks=f"Admin approved withdrawal ({request.user.username})",
+        status="approved"
+    )
+
+    # Notify user
     user = wallet.user
     if user.email:
         subject = "Withdrawal Approved – Hifas Jewellery"
@@ -448,16 +437,13 @@ def approve_withdrawal(request, pk):
             "amount": tx.total_amount,
             "bank_details": tx.remarks,
             "date": localtime(tx.timestamp).strftime("%Y-%m-%d %H:%M"),
-            "site_url": "https://yourwebsite.com",
+            "site_url": "https://hifas-jewellery.onrender.com",
             "year": now().year,
-            "subject": "Withdrawal Approved – Hifas Jewellery",
-            "logo_url": f"https://yourwebsite.com{static('images/hifas_logo.png')}",
         })
-        notify_user_email(user.email, "Withdrawal Approved – Hifas Jewellery", html)
+        notify_user_email(user.email, subject, html)
 
     messages.success(request, f"Withdrawal of Rs. {tx.total_amount:,.2f} approved ✅")
     return redirect("staff_withdrawals")
-
 
 @staff_member_required
 def reject_withdrawal(request, pk):
@@ -488,62 +474,73 @@ def reject_withdrawal(request, pk):
     messages.info(request, "Withdrawal rejected ❌")
     return redirect("staff_withdrawals")
 
-
-@login_required
-@user_passes_test(staff_only)
+@staff_member_required
+@db_tx.atomic
 def approve_deposit(request, pk):
-    deposit = get_object_or_404(BankDeposit, id=pk)
+    deposit = get_object_or_404(BankDeposit.objects.select_for_update(), id=pk)
 
     if deposit.status != "pending":
-        messages.error(request, "This deposit has already been processed.")
+        messages.warning(request, "⚠️ This deposit is already processed.")
         return redirect("staff_deposits")
 
-    wallet, _ = Wallet.objects.get_or_create(user=deposit.user, is_demo=False)
-
-    # ✅ Convert amount to Decimal and credit wallet
+    # ✅ Credit amount to REAL wallet
+    wallet = Wallet.objects.select_for_update().get(user=deposit.user, is_demo=False)
     wallet.cash_balance += Decimal(deposit.amount)
-    wallet.save()
+    wallet.save(update_fields=['cash_balance'])
 
+    Transaction.objects.create(
+    wallet=wallet,
+    transaction_type="DEPOSIT",
+    total_amount=deposit.amount,
+    remarks=f"Bank deposit ref: {deposit.reference_no}",
+    status="approved"
+    )
+
+    # ✅ Update deposit status
     deposit.status = "approved"
-    deposit.save()
+    deposit.save(update_fields=["status"])
 
-    messages.success(request, f"✅ Deposit approved & Rs {deposit.amount} credited.")
+    # ✅ Send email notification
+    if deposit.user.email:
+        html = render_to_string("emails/deposit_approved.html", {
+            "username": deposit.user.username,
+            "amount": f"{deposit.amount:,.2f}",
+            "reference_no": deposit.reference_no,
+            "date": localtime(deposit.created_at).strftime("%Y-%m-%d %H:%M"),
+            "site_url": "https://hifas-jewellery.onrender.com",
+            "year": now().year,
+        })
+        notify_user_email(deposit.user.email, "Deposit Approved – Hifas Jewellery", html)
+
+    messages.success(request, f"✅ Deposit approved. Rs. {deposit.amount:,.2f} credited to {deposit.user.username}.")
     return redirect("staff_deposits")
-
-
-@login_required
-@user_passes_test(staff_only)
+    
+@staff_member_required
 def reject_deposit(request, pk):
     deposit = get_object_or_404(BankDeposit, id=pk)
 
     if deposit.status != "pending":
-        messages.error(request, "This deposit has already been processed.")
+        messages.warning(request, "⚠️ This deposit has already been processed.")
         return redirect("staff_deposits")
 
     deposit.status = "rejected"
-    deposit.save()
+    deposit.save(update_fields=["status"])
 
-    messages.warning(request, "❌ Deposit rejected.")
+    if deposit.user.email:
+        notify_user_email(
+            deposit.user.email,
+            "Deposit Rejected – Hifas Jewellery",
+            f"""
+            <p>Hi {deposit.user.username},</p>
+            <p>Your bank deposit (Ref: {deposit.reference_no}) has been <b>rejected</b>.</p>
+            <p>Amount: Rs. {deposit.amount:,.2f}</p>
+            <p>If you believe this is an error, please contact support.</p>
+            <p>— Hifas Jewellery</p>
+            """
+        )
+
+    messages.info(request, "❌ Deposit rejected.")
     return redirect("staff_deposits")
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def approve_deposit(request, pk):
-    deposit = get_object_or_404(BankDeposit, id=pk)
-
-    if deposit.status != "pending":
-        messages.error(request, "This deposit is already processed.")
-        return redirect("staff_deposits")
-
-    deposit.status = "approved"
-    deposit.save()  # Signal will credit wallet
-
-    messages.success(request, f"✅ Deposit approved. {deposit.amount} credited.")
-    return redirect("staff_deposits")
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from django.contrib import messages
 
 def register_view(request):
     if request.method == 'POST':
@@ -559,16 +556,21 @@ def register_view(request):
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists.")
             return redirect('register')
+        try:
+            with db_tx.atomic():
 
         user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
+        # Use defaults to set initial balance only on creation
+        Wallet.objects.create(user=user, is_demo=True, cash_balance=Decimal('500000.00'))
+        Wallet.objects.create(user=user, is_demo=False) # Cash balance defaults to 0
         messages.success(request, "Account created successfully! Please log in.")
         return redirect('login')
-
-    return render(request, 'register.html')
-
-
-
+        except Exception as e:
+            messages.error(request, f"Registration failed due to an error.")
+            # Log error 'e' here.
+            return redirect('register')
+  return render(request, 'register.html')
+    
 def forgot_password(request):
     if request.method == "POST":
         email = request.POST.get("email")
