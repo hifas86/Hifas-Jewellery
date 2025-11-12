@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'goldtrade',
+    'goldtrade.apps.GoldtradeConfig',
+
+
 
 ]
 
