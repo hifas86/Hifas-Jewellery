@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decimal import Decimal
 from .models import BankDeposit, Wallet
-
+from django.contrib.auth.models import User
 
 @receiver(post_save, sender=BankDeposit)
 def credit_wallet_on_approval(sender, instance, created, **kwargs):
@@ -20,3 +20,14 @@ def credit_wallet_on_approval(sender, instance, created, **kwargs):
 
         # Mark so we don't re-credit
         instance._credited = True
+
+
+@receiver(post_save, sender=User)
+def create_demo_wallet(sender, instance, created, **kwargs):
+    if created:
+        from .models import Wallet  # 👈 import inside function to prevent circular import
+        Wallet.objects.get_or_create(
+            user=instance,
+            mode='demo',
+            defaults={'balance': 500000.00}
+        )
