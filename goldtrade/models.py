@@ -1,9 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.contrib.auth.models import User
-from .models import Wallet
 
 class Wallet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -18,15 +14,7 @@ class Wallet(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}"
-@receiver(post_save, sender=User)
-def create_demo_wallet(sender, instance, created, **kwargs):
-    if created:
-        # Create wallet if it doesn’t exist yet
-        Wallet.objects.get_or_create(
-            user=instance,
-            mode='demo',              # or your wallet type field
-            defaults={'balance': 500000.00}  # LKR 500,000.00
-        )
+
 
 class BankDeposit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
