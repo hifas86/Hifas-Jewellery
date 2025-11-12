@@ -106,9 +106,6 @@
 
     <form method="POST" action="">
         {% csrf_token %}
-        {% for message in messages %}
-            <div class="alert alert-danger">{{ message }}</div>
-        {% endfor %}
 
         <div class="input-group">
             <input type="text" name="username" required placeholder=" ">
