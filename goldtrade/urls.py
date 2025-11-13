@@ -9,7 +9,6 @@ urlpatterns = [
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
     path('reset-confirm/', views_auth.reset_confirm, name='reset_confirm'),
     path('reset-success/', views_auth.reset_success, name='reset_success'),
-    path('register-success/', views_auth.register_success, name='register_success'),
     path('verify-email/', views_auth.email_verification_pending, name='email_verification_pending'),
     path('verify-email/<uidb64>/<token>/', views_auth.verify_email, name='verify_email'),
     path('resend-verification/', views_auth.resend_verification_email, name='resend_verification'),
