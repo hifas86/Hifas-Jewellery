@@ -16,27 +16,48 @@ from django.contrib.auth.decorators import login_required
 # ------------------------------------------
 # LOGIN
 # ------------------------------------------
-def login_view(request):
+def register_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
-        password = request.POST.get("password")
+        email = request.POST.get("email")
+        password = request.POST.get("password")              # matches your form
+        confirm_password = request.POST.get("confirm_password")
 
-        user = authenticate(request, username=username, password=password)
+        # --- VALIDATIONS ---
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return redirect("register")
 
-        if user:
-            # If not verified but email verification is required
-            if not user.is_active:
-                messages.warning(request, "Please verify your email before login.")
-                return redirect("email_verification_pending")
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("register")
 
-            login(request, user)
-            return redirect("dashboard")
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already registered.")
+            return redirect("register")
 
-        messages.error(request, "Invalid username or password.")
+        # --- CREATE USER (inactive until email verified) ---
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            is_active=False,  # must verify email
+        )
+
+        # --- Send verification email ---
+        ok = send_verification_email(request, user)
+
+        if not ok:
+            messages.warning(
+                request,
+                "Account created, but verification email could not be sent (mail server not configured)."
+            )
+
+        messages.success(request, "Account created successfully! Please verify your email.")
         return redirect("login")
 
-    return render(request, "login.html")
-
+    # GET request
+    return render(request, "register.html")
 
 # ------------------------------------------
 # LOGOUT
