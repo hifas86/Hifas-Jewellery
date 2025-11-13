@@ -25,9 +25,15 @@ def credit_wallet_on_approval(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def create_demo_wallet(sender, instance, created, **kwargs):
     if created:
-        from .models import Wallet  # 👈 import inside function to prevent circular import
+        # Create demo wallet with 500,000.00 LKR
         Wallet.objects.get_or_create(
             user=instance,
-            mode='demo',
-            defaults={'balance': 500000.00}
+            is_demo=True,  # ✅ Correct field name
+            defaults={'cash_balance': Decimal('500000.00')}
+        )
+        # Create real wallet starting at 0
+        Wallet.objects.get_or_create(
+            user=instance,
+            is_demo=False,
+            defaults={'cash_balance': Decimal('0.00')}
         )
