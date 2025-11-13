@@ -66,9 +66,13 @@ def send_verification_email(request, user):
         html_message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
-        fail_silently=True,
+        fail_silently=False, # <-- change it to True
     )
-
+    return True # <-- Remove it
+   
+except Exception as e:
+        print("EMAIL ERROR:", e)  # Shows in Render logs
+        return False
 
 # ------------------------------------------
 # REGISTER USER
@@ -102,10 +106,14 @@ def register_view(request):
         )
 
         # Send email verification link
-        send_verification_email(request, user)
+        ok = send_verification_email(request, user)
 
-        messages.success(request, "Account created! Please verify your email before login.")
-        return redirect("email_verification_pending")
+        if not ok:
+        messages.warning(request,
+        "Account created, but verification email could not be sent (mail server not configured).")
+
+messages.success(request, "Account created successfully! You can now log in.")
+return redirect("login")
 
     return render(request, "register.html")
 
