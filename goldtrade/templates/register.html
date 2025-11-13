@@ -17,7 +17,6 @@
     100% {background-position: 100% 100%;}
 }
 
-/* Glass card */
 .register-card {
     width: 420px;
     background: rgba(255,255,255,0.1);
@@ -28,7 +27,6 @@
     border: 1px solid rgba(255,215,0,0.3);
 }
 
-/* Glowing Logo */
 .logo-img {
     height:90px;
     border-radius:12px;
@@ -40,7 +38,6 @@
     100% {filter: drop-shadow(0 0 2px gold);}
 }
 
-/* Floating Labels */
 .input-group {
     position: relative;
     margin-bottom: 22px;
@@ -71,7 +68,6 @@
     color: gold;
 }
 
-/* Buttons */
 .btn-gold {
     background: linear-gradient(90deg, #cfa842, #a87a1b);
     border: none;
@@ -86,7 +82,6 @@
     transform: translateY(-2px);
 }
 
-/* Links */
 .link-gold {
     color: gold;
     text-decoration: none;
@@ -102,7 +97,13 @@
     <img src="{% static 'images/hifas_logo.png' %}" class="logo-img" alt="Hifas Jewellery">
     <h3 class="fw-bold text-light mt-2">Create Your Account</h3>
     <p style="color:#d9b76e;">Join Digital Gold Trade</p>
-    <p style="color:#d9b76e;">Hifas Jewellery</p>
+
+    <!-- Display Django Messages -->
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-warning py-2">{{ msg }}</div>
+        {% endfor %}
+    {% endif %}
 
     <form method="POST" action="">
         {% csrf_token %}
@@ -117,13 +118,14 @@
             <label>Email Address</label>
         </div>
 
+        <!-- FIXED — field names aligned with register_view -->
         <div class="input-group">
-            <input type="password" name="password1" required placeholder=" ">
+            <input type="password" name="password" required placeholder=" ">
             <label>Password</label>
         </div>
 
         <div class="input-group">
-            <input type="password" name="password2" required placeholder=" ">
+            <input type="password" name="confirm_password" required placeholder=" ">
             <label>Confirm Password</label>
         </div>
 
