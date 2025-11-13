@@ -133,8 +133,10 @@ def register_view(request):
         ok = send_verification_email(request, user)
 
         if not ok:
-        messages.warning(request,
-        "Account created, but verification email could not be sent (mail server not configured).")
+        messages.warning(
+        request,
+        "Account created, but verification email could not be sent (mail server not configured)."
+    )
 
 messages.success(request, "Account created successfully! You can now log in.")
 return redirect("login")
