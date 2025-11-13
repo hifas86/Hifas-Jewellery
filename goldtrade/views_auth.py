@@ -45,14 +45,12 @@ def logout_view(request):
     logout(request)
     return redirect("login")
 
-
 # ------------------------------------------
 # SEND VERIFICATION EMAIL (Reusable function)
 # ------------------------------------------
 def send_verification_email(request, user):
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-
     verify_link = request.build_absolute_uri(f"/verify-email/{uid}/{token}/")
 
     subject = "Verify Your Email - Hifas Jewellery Digital Gold Trade"
@@ -60,19 +58,24 @@ def send_verification_email(request, user):
         "user": user,
         "verify_link": verify_link,
     })
+    text_message = strip_tags(html_message)
 
-    send_mail(
-        subject,
-        html_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False, # <-- change it to True
-    )
-    return True # <-- Remove it
-   
-except Exception as e:
-        print("EMAIL ERROR:", e)  # Shows in Render logs
+    try:
+        # Attempt to send email
+        send_mail(
+            subject,
+            text_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        return True
+
+    except Exception as e:
+        # Prevent crash on Render
+        print("EMAIL ERROR:", e)
         return False
+
 
 # ------------------------------------------
 # REGISTER USER
