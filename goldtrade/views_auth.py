@@ -2,40 +2,48 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import HttpResponse
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
+from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.contrib.auth.decorators import login_required
-from .forms import CustomUserCreationForm
+from django.db import transaction
+from decimal import Decimal
 
+from goldtrade.models import Wallet   # ✅ correct import
 
+# --------------------------------------------------------------------
+# LOGIN VIEW
+# --------------------------------------------------------------------
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
-            return redirect('dashboard')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
-    return render(request, 'login.html')
+            return redirect("dashboard")
+
+        return render(request, "login.html", {"error": "Invalid credentials"})
+
+    return render(request, "login.html")
+
 
 def logout_view(request):
     logout(request)
-    return redirect('login')
+    return redirect("login")
 
-# ✅ After successful registration, send verification email
+# --------------------------------------------------------------------
+# SEND VERIFICATION EMAIL
+# --------------------------------------------------------------------
 def send_verification_email(request, user):
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     verify_link = request.build_absolute_uri(f"/verify-email/{uid}/{token}/")
 
-    subject = "Verify Your Email - Hifas Jewellery Digital Gold Trade"
+    subject = "Verify Your Email - Hifas Jewellery"
     message = render_to_string("emails/verify_email_template.html", {
         "user": user,
         "verify_link": verify_link,
@@ -49,59 +57,80 @@ def send_verification_email(request, user):
         fail_silently=False,
     )
 
-# ✅ Registration view (updated to include email verification)
+# --------------------------------------------------------------------
+# REGISTER VIEW  ⭐ FIXED ⭐
+# --------------------------------------------------------------------
 def register_view(request):
-    """Handle user registration with optional email verification."""
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
 
-            if getattr(settings, "EMAIL_VERIFICATION_ENABLED", False):
-                # Verification required
-                user.is_active = False
-                user.save()
-                messages.success(request, "Account created! Please check your email to verify your account.")
-                return redirect("email_verification_pending")
-            else:
-                # No verification — activate immediately
-                user.is_active = True
-                user.save()
-                login(request, user)
-                messages.success(request, "Registration successful! Welcome to Hifas Jewellery.")
-                return redirect("dashboard")
-        else:
-            print(form.errors)  # 🧠 Log the real reason to console
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field.capitalize()}: {error}")
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
 
-    else:
-        form = CustomUserCreationForm()
+        # --------------------------------------------------------------
+        # VALIDATIONS
+        # --------------------------------------------------------------
+        if not username or not email or not password:
+            messages.error(request, "All fields are required.")
+            return redirect("register")
 
-    return render(request, "register.html", {"form": form})
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+            return redirect("register")
 
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return redirect("register")
 
-# ✅ Email verification handler
-def verify_email(request, uidb64, token):
-    try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return redirect("register")
 
-    if user is not None and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
-        return render(request, "verify_success.html")
-    else:
-        return render(request, "verify_failed.html")
+        # --------------------------------------------------------------
+        # CREATE USER + WALLETS SAFELY (Atomic)
+        # --------------------------------------------------------------
+        try:
+            with transaction.atomic():
 
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    is_active=True       # Change to False if requiring email verification
+                )
 
-def register_success(request):
-    return render(request, "register_success.html")
-    return redirect("register_success")
+                # Create demo wallet with 500,000 LKR
+                Wallet.objects.create(
+                    user=user,
+                    is_demo=True,
+                    cash_balance=Decimal("500000.00"),
+                    gold_balance=Decimal("0")
+                )
 
+                # Create real wallet (0 balance)
+                Wallet.objects.create(
+                    user=user,
+                    is_demo=False,
+                    cash_balance=Decimal("0"),
+                    gold_balance=Decimal("0")
+                )
+
+        except Exception as e:
+            messages.error(request, f"Registration failed: {e}")
+            return redirect("register")
+
+        # OPTIONAL: Send email verification
+        # send_verification_email(request, user)
+
+        messages.success(request, "Account created successfully! Please log in.")
+        return redirect("login")
+
+    return render(request, "register.html")
+
+# --------------------------------------------------------------------
+# FORGOT PASSWORD
+# --------------------------------------------------------------------
 def forgot_password(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -111,22 +140,23 @@ def forgot_password(request):
             messages.error(request, "No account found with this email.")
             return redirect("forgot_password")
 
-        messages.success(request, "✅ Reset link sent to your email.")
+        messages.success(request, "Reset link sent to your email.")
         return redirect("forgot_password")
 
     return render(request, "forgot_password.html")
 
-
+# --------------------------------------------------------------------
 def reset_confirm(request):
     if request.method == "POST":
         pw1 = request.POST.get("password1")
         pw2 = request.POST.get("password2")
+
         if pw1 != pw2:
             messages.error(request, "Passwords do not match.")
             return redirect("reset_confirm")
 
-        messages.success(request, "✅ Your password has been reset successfully.")
-        return redirect("reset_success")  # 👈 redirect to success page
+        messages.success(request, "Password reset successful.")
+        return redirect("reset_success")
 
     return render(request, "reset_confirm.html")
 
@@ -137,21 +167,19 @@ def reset_success(request):
 
 def email_verification_pending(request):
     if request.method == "POST":
-        # Logic to resend verification email
-        messages.success(request, "✅ Verification email resent successfully!")
+        messages.success(request, "Verification email resent successfully!")
         return redirect("email_verification_pending")
+
     return render(request, "email_verification_pending.html")
 
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def resend_verification_email(request):
     user = request.user
     if user.is_active:
-        messages.info(request, "✅ Your account is already verified.")
+        messages.info(request, "Your account is already verified.")
         return redirect("dashboard")
 
     send_verification_email(request, user)
-    messages.success(request, "📨 Verification email resent successfully!")
+    messages.success(request, "Verification email resent successfully!")
     return redirect("email_verification_pending")
-
