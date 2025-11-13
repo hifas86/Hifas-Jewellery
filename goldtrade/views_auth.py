@@ -148,30 +148,68 @@ def verify_email(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
-    except:
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
 
-    if user and default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
+    if user is not None:
+        # Check token validity
+        if default_token_generator.check_token(user, token):
 
-        messages.success(request, "🎉 Email verified successfully! You can now log in.")
-        return redirect("login")
-    else:
-        messages.error(request, "Invalid or expired verification link.")
-        return redirect("login")
+            # User already verified
+            if user.is_active:
+                messages.info(request, "Your email is already verified. Please log in.")
+                return redirect("login")
+
+            # Activate user
+            user.is_active = True
+            user.save()
+
+            # Ensure wallets exist (because Render may skip signals)
+            from .models import Wallet
+            Wallet.objects.get_or_create(user=user, is_demo=True, defaults={
+                "cash_balance": Decimal("500000.00")
+            })
+            Wallet.objects.get_or_create(user=user, is_demo=False)
+
+            messages.success(request, "🎉 Email verified successfully! You can now log in.")
+            return redirect("login")
+
+    # Fallback for invalid token / invalid link
+    messages.error(request, "Invalid or expired verification link.")
+    return redirect("login")
 
 
 # ------------------------------------------
 # EMAIL VERIFICATION PENDING SCREEN
 # ------------------------------------------
+@login_required
 def email_verification_pending(request):
+    if request.method == "POST":
+        # Only resend if user is NOT active
+        if request.user.is_active:
+            messages.info(request, "Your email is already verified.")
+            return redirect("dashboard")
+
+        # Resend verification email safely
+        ok = send_verification_email(request, request.user)
+
+        if ok:
+            messages.success(request, "📨 Verification email resent successfully!")
+        else:
+            messages.warning(
+                request,
+                "Verification email could not be sent. Email server not configured."
+            )
+
+        return redirect("email_verification_pending")
+
+    # GET request → show template
     return render(request, "email_verification_pending.html")
 
 
-# ------------------------------------------
-# RESEND VERIFICATION EMAIL
-# ------------------------------------------
+# --------------------------------------------------------
+#  RESEND VERIFICATION EMAIL (Button/Link action)
+# --------------------------------------------------------
 @login_required
 def resend_verification_email(request):
     user = request.user
@@ -180,11 +218,18 @@ def resend_verification_email(request):
         messages.info(request, "Your account is already verified.")
         return redirect("dashboard")
 
-    send_verification_email(request, user)
-    messages.success(request, "📨 Verification email resent successfully!")
+    ok = send_verification_email(request, user)
+
+    if ok:
+        messages.success(request, "📨 Verification email resent successfully!")
+    else:
+        messages.warning(
+            request,
+            "Verification email could not be sent. Email server not configured."
+        )
+
     return redirect("email_verification_pending")
-
-
+    
 # ------------------------------------------
 # FORGOT PASSWORD
 # (You will implement token email reset later)
