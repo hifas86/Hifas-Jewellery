@@ -2,16 +2,17 @@ from django.urls import path
 from . import views, views_auth
 
 urlpatterns = [
-    # 🔐 Authentication routes
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
-    path('reset-confirm/', views_auth.reset_confirm, name='reset_confirm'),
-    path('reset-success/', views_auth.reset_success, name='reset_success'),
 
-    # 💰 Core App routes
     path('', views.dashboard, name='dashboard'),
+
+    # Wallet switching
+    path('switch-wallet/<str:mode>/', views.switch_wallet, name='switch_wallet'),
+
+    # Core
     path('update-rate/', views.update_gold_rate, name='update_rate'),
     path('buy-gold/', views.buy_gold, name='buy_gold'),
     path('sell-gold/', views.sell_gold, name='sell_gold'),
@@ -20,12 +21,11 @@ urlpatterns = [
     path('gold-history/', views.gold_price_history, name='gold_history'),
 
     path('add-money/', views.add_money, name='add_money'),
+    path('my-deposits/', views.my_deposits, name='my_deposits'),
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
     path('withdraw/confirm/<int:tx_id>/', views.withdraw_confirm, name='withdraw_confirm'),
 
-    path('my-deposits/', views.my_deposits, name='my_deposits'),
-
-    # Staff actions
+    # Staff
     path('staff/deposits/', views.staff_deposits, name='staff_deposits'),
     path('staff/deposits/<int:pk>/approve/', views.approve_deposit, name='approve_deposit'),
     path('staff/deposits/<int:pk>/reject/', views.reject_deposit, name='reject_deposit'),
