@@ -51,6 +51,8 @@ urlpatterns = [
 
     path('staff/withdrawals/approve/<int:pk>/', app_views.approve_withdrawal, name='approve_withdrawal'),
     path('staff/withdrawals/reject/<int:pk>/', app_views.reject_withdrawal, name='reject_withdrawal'),
+    path('update-rate/', views.update_gold_rate, name='update_rate'),
+
 
     # ------------------------------
     # DJANGO ADMIN
