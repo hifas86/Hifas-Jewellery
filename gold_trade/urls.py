@@ -2,8 +2,7 @@
 
 from django.contrib import admin
 from django.urls import path
-from goldtrade import views as app_views
-from goldtrade import views_auth as auth_views
+from . import views, views_auth
 
 urlpatterns = [
 
