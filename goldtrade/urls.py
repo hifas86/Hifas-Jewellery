@@ -22,6 +22,7 @@ urlpatterns = [
     path('refresh-rates/', views.refresh_rates, name='refresh_rates'),
     path('gold-history/', views.gold_price_history, name='gold_history'),
     path('add-money/', views.add_money, name='add_money'),
+    path('my-deposits/', app_views.my_deposits, name='my_deposits'),
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
     path('withdraw/confirm/<int:tx_id>/', views.withdraw_confirm, name='withdraw_confirm'),
 
