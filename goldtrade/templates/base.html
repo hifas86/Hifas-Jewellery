@@ -229,7 +229,6 @@ body {
     <a href="{% url 'buy_gold' %}" class="{% if request.resolver_match.url_name == 'buy_gold' %}active{% endif %}">💰 Buy Gold</a>
     <a href="{% url 'sell_gold' %}" class="{% if request.resolver_match.url_name == 'sell_gold' %}active{% endif %}">💸 Sell Gold</a>
     <a href="{% url 'transactions' %}" class="{% if request.resolver_match.url_name == 'transactions' %}active{% endif %}">📜 Transactions</a>
-    <a href="{% url 'reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">📊 Reports</a>
     <a href="{% url 'add_money' %}" class="{% if request.resolver_match.url_name == 'add_money' %}active{% endif %}">💵 Add Money</a>
    <a href="{% url 'my_deposits' %}" class="{% if request.resolver_match.url_name == 'my_deposits' %}active{% endif %}">🏦 My Deposits</a>
 
