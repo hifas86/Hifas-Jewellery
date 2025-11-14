@@ -28,7 +28,7 @@ urlpatterns = [
     path('sell-gold/', app_views.sell_gold, name='sell_gold'),
 
     # ---- MONEY OPERATIONS ----
-    path('my-deposits/', app_views.my_deposits, name='my_deposits'),
+    path('my-deposits/', views.my_deposits, name='my_deposits'),
     path('add-money/', app_views.add_money, name='add_money'),
     path('withdraw-money/', app_views.withdraw_money, name='withdraw_money'),
     path('withdraw-confirm/<int:tx_id>/', app_views.withdraw_confirm, name='withdraw_confirm'),
