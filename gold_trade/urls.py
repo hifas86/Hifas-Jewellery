@@ -2,7 +2,8 @@
 
 from django.contrib import admin
 from django.urls import path
-from . import views, views_auth
+from . import views,
+from . import views_auth as auth_views,
 
 urlpatterns = [
 
