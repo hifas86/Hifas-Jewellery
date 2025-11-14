@@ -2,24 +2,29 @@ from django.urls import path
 from . import views, views_auth
 
 urlpatterns = [
+    # Authentication
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
 
+    # Dashboard
     path('', views.dashboard, name='dashboard'),
 
-    # Wallet switching
+    # Wallet switch
     path('switch-wallet/<str:mode>/', views.switch_wallet, name='switch_wallet'),
 
-    # Core
-    path('update-rate/', views.update_gold_rate, name='update_rate'),
+    # Gold Trading
     path('buy-gold/', views.buy_gold, name='buy_gold'),
     path('sell-gold/', views.sell_gold, name='sell_gold'),
     path('transactions/', views.transactions, name='transactions'),
+
+    # Rates
+    path('update-rate/', views.update_gold_rate, name='update_rate'),
     path('refresh-rates/', views.refresh_rates, name='refresh_rates'),
     path('gold-history/', views.gold_price_history, name='gold_history'),
 
+    # Deposits / Withdrawals
     path('add-money/', views.add_money, name='add_money'),
     path('my-deposits/', views.my_deposits, name='my_deposits'),
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
