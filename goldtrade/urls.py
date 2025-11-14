@@ -9,9 +9,6 @@ urlpatterns = [
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
     path('reset-confirm/', views_auth.reset_confirm, name='reset_confirm'),
     path('reset-success/', views_auth.reset_success, name='reset_success'),
-    path('verify-email/', views_auth.email_verification_pending, name='email_verification_pending'),
-    path('verify-email/<uidb64>/<token>/', views_auth.verify_email, name='verify_email'),
-    path('resend-verification/', views_auth.resend_verification_email, name='resend_verification'),
 
     # 💰 Core App routes
     path('', views.dashboard, name='dashboard'),
@@ -21,17 +18,18 @@ urlpatterns = [
     path('transactions/', views.transactions, name='transactions'),
     path('refresh-rates/', views.refresh_rates, name='refresh_rates'),
     path('gold-history/', views.gold_price_history, name='gold_history'),
+
     path('add-money/', views.add_money, name='add_money'),
-    path('my-deposits/', views.my_deposits, name='my_deposits'),
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
     path('withdraw/confirm/<int:tx_id>/', views.withdraw_confirm, name='withdraw_confirm'),
+
+    path('my-deposits/', views.my_deposits, name='my_deposits'),
 
     # Staff actions
     path('staff/deposits/', views.staff_deposits, name='staff_deposits'),
     path('staff/deposits/<int:pk>/approve/', views.approve_deposit, name='approve_deposit'),
     path('staff/deposits/<int:pk>/reject/', views.reject_deposit, name='reject_deposit'),
 
-    # Withdrawals (Admin)
     path('staff/withdrawals/', views.staff_withdrawals, name='staff_withdrawals'),
     path('staff/withdrawals/<int:pk>/approve/', views.approve_withdrawal, name='approve_withdrawal'),
     path('staff/withdrawals/<int:pk>/reject/', views.reject_withdrawal, name='reject_withdrawal'),
