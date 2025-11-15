@@ -2,6 +2,9 @@ from django.urls import path
 from . import views, views_auth
 
 urlpatterns = [
+    # Django admin (must exist to avoid NoReverseMatch: 'admin')
+    path("admin/", admin.site.urls),
+    
     # Authentication
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
