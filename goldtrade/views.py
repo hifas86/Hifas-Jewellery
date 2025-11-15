@@ -17,7 +17,6 @@ from django.db import transaction as db_tx  # alias for clarity
 
 from .models import BankDeposit, GoldRate, Transaction, Wallet
 
-
 # =========================
 # Email Helper
 # =========================
@@ -196,7 +195,6 @@ def buy_gold(request):
         {"wallet": wallet, "buy_rate": rates["buy_rate"], "sell_rate": rates["sell_rate"]},
     )
 
-
 # =========================
 # SELL GOLD
 # =========================
@@ -264,7 +262,6 @@ def sell_gold(request):
         {"wallet": wallet, "buy_rate": rates["buy_rate"], "sell_rate": rates["sell_rate"]},
     )
 
-
 # =========================
 # ADD MONEY (submit deposit slip)
 # =========================
@@ -305,7 +302,6 @@ def add_money(request):
         return redirect("add_money")
 
     return render(request, "goldtrade/add_money.html", {"wallet": wallet})
-
 
 # =========================
 # WITHDRAW MONEY (user request)
@@ -370,7 +366,6 @@ def withdraw_money(request):
 
     return render(request, "goldtrade/withdraw.html", {"wallet": wallet})
 
-
 @login_required
 def withdraw_confirm(request, tx_id):
     tx = get_object_or_404(
@@ -381,7 +376,6 @@ def withdraw_confirm(request, tx_id):
     )
     return render(request, "goldtrade/withdraw_confirm.html", {"tx": tx})
 
-
 # =========================
 # Transactions (selected wallet)
 # =========================
@@ -390,7 +384,6 @@ def transactions(request):
     wallet, _is_demo = _get_selected_wallet(request)
     tx = Transaction.objects.filter(wallet=wallet).order_by("-timestamp")
     return render(request, "goldtrade/transactions.html", {"transactions": tx})
-
 
 # =========================
 # Rates: Refresh + History
@@ -420,7 +413,6 @@ def gold_price_history(request):
         "sell_rates": [float(g.sell_rate) for g in history],
     }
     return JsonResponse(data)
-
 
 # =========================
 # Staff: Update Gold Rate
@@ -484,7 +476,6 @@ def staff_deposits(request):
         request, "goldtrade/staff_deposits.html", {"deposits": qs, "q": q, "status": status}
     )
 
-
 # =========================
 # Staff: Withdrawals list
 # =========================
@@ -506,7 +497,6 @@ def staff_withdrawals(request):
         "goldtrade/staff_withdrawals.html",
         {"withdrawals": qs, "q": q, "status": status},
     )
-
 
 # =========================
 # Staff: Approve Withdrawal
@@ -564,7 +554,6 @@ def approve_withdrawal(request, pk):
     )
     return redirect("staff_withdrawals")
 
-
 # =========================
 # Staff: Reject Withdrawal
 # =========================
@@ -595,7 +584,6 @@ def reject_withdrawal(request, pk):
 
     messages.info(request, "Withdrawal rejected ❌")
     return redirect("staff_withdrawals")
-
 
 # =========================
 # Staff: Approve Deposit
@@ -650,7 +638,6 @@ def approve_deposit(request, pk):
     )
     return redirect("staff_deposits")
 
-
 # =========================
 # Staff: Reject Deposit
 # =========================
@@ -681,6 +668,20 @@ def reject_deposit(request, pk):
     messages.info(request, "❌ Deposit rejected.")
     return redirect("staff_deposits")
 
+# =========================
+# Staff: Notifications alert
+# =========================
+@staff_member_required
+def live_notifications(request):
+    deposit_count = BankDeposit.objects.filter(status="pending").count()
+    withdraw_count = Transaction.objects.filter(
+        transaction_type="WITHDRAW", status="pending"
+    ).count()
+
+    return JsonResponse({
+        "deposits": deposit_count,
+        "withdrawals": withdraw_count
+    })
 
 # =========================
 # Auth: Register + Forgot Password
