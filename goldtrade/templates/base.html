@@ -263,6 +263,7 @@ body {
     <a href="{% url 'add_money' %}" class="{% if request.resolver_match.url_name == 'add_money' %}active{% endif %}">💵 Add Money</a>
     <a href="{% url 'my_deposits' %}" class="{% if request.resolver_match.url_name == 'my_deposits' %}active{% endif %}">🏦 My Deposits</a>
     <a href="{% url 'withdraw_money' %}" class="{% if request.resolver_match.url_name == 'withdraw_money' %}active{% endif %}">💳 Withdraw Money</a>
+    <a href="{% url 'my_withdrawals' %}" class="{% if request.resolver_match.url_name == 'my_withdrawals' %}active{% endif %}">🧾 My Withdrawals</a>
 
 {% if request.user.is_staff %}
     <a href="{% url 'update_rate' %}" class="{% if request.resolver_match.url_name == 'update_rate' %}active{% endif %}">
