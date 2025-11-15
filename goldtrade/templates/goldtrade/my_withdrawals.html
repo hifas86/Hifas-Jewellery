@@ -1,102 +1,48 @@
-{% extends "base.html" %}
-{% block title %}My Withdrawals - Digital Gold Trade{% endblock %}
+{% extends "goldtrade/base.html" %}
+{% block title %}My Withdrawals{% endblock %}
 {% block content %}
 
-<h2 class="text-warning fw-bold mb-4">💳 My Withdrawal History</h2>
+<h3 class="mb-4">💳 My Withdrawals</h3>
 
-<!-- FILTER TABS -->
-<div class="mb-3 d-flex gap-2">
-    <a href="?status=all" class="btn btn-sm {% if status_filter=='all' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-        All
-    </a>
-    <a href="?status=pending" class="btn btn-sm {% if status_filter=='pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
-        Pending
-    </a>
-    <a href="?status=approved" class="btn btn-sm {% if status_filter=='approved' %}btn-success{% else %}btn-outline-success{% endif %}">
-        Approved
-    </a>
-    <a href="?status=rejected" class="btn btn-sm {% if status_filter=='rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-        Rejected
-    </a>
-</div>
-
-<!-- WITHDRAWAL LIST -->
-<div class="card" style="background:#111827; border:1px solid #d4af37;">
-    <div class="card-body">
-
-        {% if withdrawals %}
-        <ul class="list-group">
-
+<div class="card bg-dark text-white border-gold p-3">
+    <table class="table table-dark table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Amount (LKR)</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Approved On</th>
+            </tr>
+        </thead>
+        <tbody>
             {% for w in withdrawals %}
-            <li class="list-group-item mb-2"
-                style="background:#0d1221; border:1px solid #2d2d2d; color:white; border-radius:8px;">
-
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="fw-bold text-warning">Rs. {{ w.total_amount|floatformat:2 }}</div>
-                        <small class="text-muted">{{ w.timestamp|date:"Y-m-d h:i A" }}</small><br>
-                        <small>{{ w.remarks }}</small>
-                    </div>
-
-                    <!-- STATUS BADGE -->
-                    <div class="text-end">
-                        {% if w.status == "pending" %}
-                            <span class="badge bg-warning text-dark">Pending</span>
-                        {% elif w.status == "approved" %}
-                            <span class="badge bg-success">Approved</span>
-                        {% else %}
-                            <span class="badge bg-danger">Rejected</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- TIMELINE -->
-                <div class="mt-3">
-                    <div class="progress" style="height:8px; border-radius:20px;">
-                        {% if w.status == "pending" %}
-                            <div class="progress-bar bg-warning" style="width:33%"></div>
-                        {% elif w.status == "approved" %}
-                            <div class="progress-bar bg-success" style="width:100%"></div>
-                        {% else %}
-                            <div class="progress-bar bg-danger" style="width:100%"></div>
-                        {% endif %}
-                    </div>
-                </div>
-
-            </li>
+            <tr>
+                <td>{{ w.amount|floatformat:2 }}</td>
+                <td>{{ w.created_at }}</td>
+                <td>
+                    {% if w.status == "pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif w.status == "approved" %}
+                        <span class="badge bg-success">Approved</span>
+                    {% else %}
+                        <span class="badge bg-danger">Rejected</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if w.approved_at %}
+                        {{ w.approved_at }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No withdrawals found.</td>
+            </tr>
             {% endfor %}
-
-        </ul>
-
-        <!-- PAGINATION -->
-        <nav class="mt-3">
-            <ul class="pagination">
-
-                {% if withdrawals.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ withdrawals.previous_page_number }}&status={{ status_filter }}">Previous</a>
-                </li>
-                {% endif %}
-
-                <li class="page-item active">
-                    <span class="page-link bg-warning text-dark border-warning">
-                        Page {{ withdrawals.number }}
-                    </span>
-                </li>
-
-                {% if withdrawals.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ withdrawals.next_page_number }}&status={{ status_filter }}">Next</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-
-        {% else %}
-        <p class="text-muted">No withdrawal requests found.</p>
-        {% endif %}
-
-    </div>
+        </tbody>
+    </table>
 </div>
 
 {% endblock %}
