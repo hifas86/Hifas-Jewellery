@@ -800,4 +800,8 @@ def kyc_submit(request):
         return redirect("kyc_status")
 
     return render(request, "goldtrade/kyc_form.html")
+@login_required
+def kyc_status(request):
+    kyc = KYC.objects.filter(user=request.user).first()
+    return render(request, "goldtrade/kyc_status.html", {"kyc": kyc})
 
