@@ -264,6 +264,7 @@ body {
     <a href="{% url 'my_deposits' %}" class="{% if request.resolver_match.url_name == 'my_deposits' %}active{% endif %}">🏦 My Deposits</a>
     <a href="{% url 'withdraw_money' %}" class="{% if request.resolver_match.url_name == 'withdraw_money' %}active{% endif %}">💳 Withdraw Money</a>
     <a href="{% url 'my_withdrawals' %}" class="{% if request.resolver_match.url_name == 'my_withdrawals' %}active{% endif %}">🧾 My Withdrawals</a>
+    <a href="{% url 'kyc_status' %}" class="{% if request.resolver_match.url_name == 'kyc_status' %}active{% endif %}">🛡️ KYC Verification</a>
 
 {% if request.user.is_staff %}
     <a href="{% url 'update_rate' %}" class="{% if request.resolver_match.url_name == 'update_rate' %}active{% endif %}">
