@@ -770,3 +770,34 @@ def forgot_password(request):
         return redirect("forgot_password")
 
     return render(request, "forgot_password.html")
+
+# =========================
+# My KYC
+# =========================
+
+@login_required
+def kyc_submit(request):
+    if request.method == "POST":
+        KYC.objects.update_or_create(
+            user=request.user,
+            defaults={
+                "full_name": request.POST["full_name"],
+                "nic_number": request.POST["nic_number"],
+                "dob": request.POST["dob"],
+                "address": request.POST["address"],
+                "selfie": request.FILES["selfie"],
+                "nic_front": request.FILES["nic_front"],
+                "nic_back": request.FILES["nic_back"],
+                "signature": request.FILES["signature"],
+                "bank_name": request.POST["bank_name"],
+                "account_number": request.POST["account_number"],
+                "branch": request.POST["branch"],
+                "status": "pending",
+                "rejection_reason": None,
+            },
+        )
+        messages.success(request, "KYC submitted successfully! Please wait for approval.")
+        return redirect("kyc_status")
+
+    return render(request, "goldtrade/kyc_form.html")
+
