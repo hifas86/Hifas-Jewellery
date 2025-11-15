@@ -89,20 +89,11 @@ def forgot_password(request):
             messages.error(request, "No account found with this email.")
             return redirect("forgot_password")
 
-        # Dummy reset link (you can replace with real token system)
-        send_mail(
-            "Reset your Digital Gold Trade password",
-            "Click to reset your password: https://hifas-jewellery.onrender.com/reset-confirm/",
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=True,
-        )
-
-        messages.success(request, "Reset email sent successfully!")
+        # Fake reset link (no SMTP)
+        messages.success(request, "A password reset link has been sent to your email (demo mode).")
         return redirect("forgot_password")
 
     return render(request, "forgot_password.html")
-
 
 # ------------------------------
 # RESET PASSWORD (Dummy)
