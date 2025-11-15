@@ -166,6 +166,18 @@ body {
     from { transform: scale(0.6); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+    @keyframes bell-shake {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0); }
+}
+
+.bell-alert {
+  animation: bell-shake 0.5s ease-in-out;
+}
+
 </style>
 
 </style>
@@ -218,6 +230,17 @@ body {
 
 
 <span class="gold-user ms-2">👑 {{ request.user.username|title }}</span>
+        <div class="position-relative me-3">
+  <span id="notif-bell" style="font-size:25px; cursor:pointer;">
+    🔔
+  </span>
+
+  <span id="notif-badge" 
+        class="badge bg-danger position-absolute top-0 start-100 translate-middle"
+        style="display:none; border-radius:50%; padding:5px 8px;">
+  </span>
+</div>
+
 <a href="{% url 'logout' %}" class="ms-2 text-danger fw-bold">Logout</a>
 
 
@@ -316,6 +339,54 @@ setInterval(fetchGoldRates, 10000);
     });
   {% endfor %}
 {% endif %}
+</script>
+<script>
+let lastTotal = 0;
+
+function checkNotifications() {
+    fetch("{% url 'live_notifications' %}")
+        .then(res => res.json())
+        .then(data => {
+            let total = data.deposits + data.withdrawals;
+
+            const badge = document.getElementById("notif-badge");
+            const bell = document.getElementById("notif-bell");
+
+            if (total > 0) {
+                badge.style.display = "inline-block";
+                badge.innerHTML = total;
+
+                // Bell animation on new notification
+                if (total > lastTotal) {
+                    bell.classList.add("bell-alert");
+
+                    setTimeout(() => {
+                        bell.classList.remove("bell-alert");
+                    }, 600);
+
+                    // 🔊 Optional sound
+                    playNotifSound();
+                }
+
+            } else {
+                badge.style.display = "none";
+            }
+
+            lastTotal = total;
+        })
+        .catch(err => console.error("Notification error:", err));
+}
+
+// Run every 10 seconds
+setInterval(checkNotifications, 10000);
+
+// Run on page load
+checkNotifications();
+// 🔊 OPTIONAL: Notification sound
+function playNotifSound() {
+    const snd = new Audio("{% static 'sounds/notify.mp3' %}");
+    snd.play().catch(() => {});
+}
 </script>
 
 </body>
