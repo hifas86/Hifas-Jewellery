@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}KYC Verification{% endblock %}
+{% block content %}
+
+<h3 class="text-warning fw-bold mb-4">🛡️ KYC Verification</h3>
+
+<form method="POST" enctype="multipart/form-data" class="card p-4" style="background:#111827; border:1px solid #d4af37;">
+    {% csrf_token %}
+
+    <label class="fw-bold text-warning">Full Name</label>
+    <input type="text" name="full_name" class="form-control mb-3" required>
+
+    <label class="fw-bold text-warning">NIC / Passport No</label>
+    <input type="text" name="nic_number" class="form-control mb-3" required>
+
+    <label class="fw-bold text-warning">Date of Birth</label>
+    <input type="date" name="dob" class="form-control mb-3" required>
+
+    <label class="fw-bold text-warning">Address</label>
+    <textarea name="address" class="form-control mb-3" required></textarea>
+
+    <label class="fw-bold text-warning">Selfie Photo</label>
+    <input type="file" name="selfie" class="form-control mb-3" accept="image/*" required>
+
+    <label class="fw-bold text-warning">NIC Front Image</label>
+    <input type="file" name="nic_front" class="form-control mb-3" accept="image/*" required>
+
+    <label class="fw-bold text-warning">NIC Back Image</label>
+    <input type="file" name="nic_back" class="form-control mb-3" accept="image/*" required>
+
+    <label class="fw-bold text-warning">Signature Image</label>
+    <input type="file" name="signature" class="form-control mb-3" accept="image/*" required>
+
+    <hr class="border-warning">
+
+    <h5 class="text-warning fw-bold">💳 Bank Details</h5>
+
+    <label class="fw-bold text-warning">Bank Name</label>
+    <input type="text" name="bank_name" class="form-control mb-3" required>
+
+    <label class="fw-bold text-warning">Account Number</label>
+    <input type="text" name="account_number" class="form-control mb-3" required>
+
+    <label class="fw-bold text-warning">Branch</label>
+    <input type="text" name="branch" class="form-control mb-3" required>
+
+    <button class="btn btn-warning w-100 fw-bold">Submit KYC</button>
+</form>
+
+{% endblock %}
