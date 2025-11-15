@@ -8,6 +8,9 @@ urlpatterns = [
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
 
+    # Live notifications
+    path("live-notifications/", views.live_notifications, name="live_notifications"),  # ✅ Now works
+    
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
