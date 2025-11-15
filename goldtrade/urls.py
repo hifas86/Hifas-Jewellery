@@ -35,6 +35,7 @@ urlpatterns = [
     path('my-deposits/', views.my_deposits, name='my_deposits'),
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
     path('withdraw/confirm/<int:tx_id>/', views.withdraw_confirm, name='withdraw_confirm'),
+    path("my-withdrawals/", views.my_withdrawals, name="my_withdrawals"),
 
     # Django admin (must exist to avoid NoReverseMatch: 'admin')
     path("admin/", admin.site.urls),
