@@ -11,7 +11,9 @@ urlpatterns = [
     path('logout/', views_auth.logout_view, name='logout'),
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
-    
+    path("kyc/submit/", views.kyc_submit, name="kyc_submit"),
+    path("kyc/status/", views.kyc_status, name="kyc_status"),
+
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
