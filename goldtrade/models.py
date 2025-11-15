@@ -13,7 +13,7 @@ class Wallet(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}
+        return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}"
         
 class BankDeposit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
