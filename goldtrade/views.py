@@ -475,6 +475,34 @@ def staff_deposits(request):
     return render(
         request, "goldtrade/staff_deposits.html", {"deposits": qs, "q": q, "status": status}
     )
+from django.core.paginator import Paginator
+
+# =========================
+# My Withdrawals (user)
+# =========================
+@login_required
+def my_withdrawals(request):
+    wallet = Wallet.objects.get(user=request.user, is_demo=False)
+
+    status_filter = request.GET.get("status", "all")
+
+    withdrawals = Transaction.objects.filter(
+        wallet=wallet,
+        transaction_type="WITHDRAW",
+    ).order_by("-timestamp")
+
+    if status_filter in ["pending", "approved", "rejected"]:
+        withdrawals = withdrawals.filter(status=status_filter)
+
+    # Pagination
+    paginator = Paginator(withdrawals, 10)  # 10 per page
+    page = request.GET.get('page')
+    withdrawals_page = paginator.get_page(page)
+
+    return render(request, "goldtrade/my_withdrawals.html", {
+        "withdrawals": withdrawals_page,
+        "status_filter": status_filter,
+    })
 
 # =========================
 # Staff: Withdrawals list
