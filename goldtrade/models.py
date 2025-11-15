@@ -13,9 +13,8 @@ class Wallet(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}"
-
-
+        return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}
+        
 class BankDeposit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -32,7 +31,6 @@ class BankDeposit(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} LKR"
-
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
@@ -62,7 +60,6 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.transaction_type} - {self.total_amount} ({self.status})"
 
-
 class GoldRate(models.Model):
     buy_rate = models.DecimalField(max_digits=10, decimal_places=2, help_text="Buy rate per gram in LKR")
     sell_rate = models.DecimalField(max_digits=10, decimal_places=2, help_text="Sell rate per gram in LKR")
@@ -70,3 +67,35 @@ class GoldRate(models.Model):
 
     def __str__(self):
         return f"Buy: {self.buy_rate} | Sell: {self.sell_rate} (Updated {self.last_updated.strftime('%Y-%m-%d %H:%M')})"
+
+class KYC(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    full_name = models.CharField(max_length=150)
+    nic_number = models.CharField(max_length=50)
+    dob = models.DateField()
+    address = models.TextField()
+
+    selfie = models.ImageField(upload_to="kyc/selfie/")
+    nic_front = models.ImageField(upload_to="kyc/nic_front/")
+    nic_back = models.ImageField(upload_to="kyc/nic_back/")
+    signature = models.ImageField(upload_to="kyc/signature/")
+
+    bank_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=50)
+    branch = models.CharField(max_length=100)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    rejection_reason = models.TextField(blank=True, null=True)
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
