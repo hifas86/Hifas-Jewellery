@@ -3,17 +3,14 @@ from django.urls import path
 from . import views, views_auth
 
 urlpatterns = [
-    # Django admin (must exist to avoid NoReverseMatch: 'admin')
-    path("admin/", admin.site.urls),
+        # Live notifications
+    path("live-notifications/", views.live_notifications, name="live_notifications"),  # ✅ Now works
     
     # Authentication
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
-
-    # Live notifications
-    path("live-notifications/", views.live_notifications, name="live_notifications"),  # ✅ Now works
     
     # Dashboard
     path('', views.dashboard, name='dashboard'),
@@ -37,6 +34,9 @@ urlpatterns = [
     path('withdraw/', views.withdraw_money, name='withdraw_money'),
     path('withdraw/confirm/<int:tx_id>/', views.withdraw_confirm, name='withdraw_confirm'),
 
+    # Django admin (must exist to avoid NoReverseMatch: 'admin')
+    path("admin/", admin.site.urls),
+    
     # Staff
     path('staff/deposits/', views.staff_deposits, name='staff_deposits'),
     path('staff/deposits/<int:pk>/approve/', views.approve_deposit, name='approve_deposit'),
@@ -45,4 +45,7 @@ urlpatterns = [
     path('staff/withdrawals/', views.staff_withdrawals, name='staff_withdrawals'),
     path('staff/withdrawals/<int:pk>/approve/', views.approve_withdrawal, name='approve_withdrawal'),
     path('staff/withdrawals/<int:pk>/reject/', views.reject_withdrawal, name='reject_withdrawal'),
+
+
+    
 ]
