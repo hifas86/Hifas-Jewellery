@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="text-warning fw-bold">🛡️ KYC Status</h3>
+
+{% if kyc %}
+    <div class="card p-4" style="background:#111827; border:1px solid #d4af37;">
+        <p><b>Status:</b> 
+            {% if kyc.status == "approved" %}
+                <span class="badge bg-success">Approved</span>
+            {% elif kyc.status == "pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+            {% else %}
+                <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+        </p>
+
+        {% if kyc.status == "rejected" %}
+            <p class="text-danger"><b>Reason:</b> {{ kyc.rejection_reason }}</p>
+            <a href="{% url 'kyc_submit' %}" class="btn btn-warning">Resubmit KYC</a>
+        {% endif %}
+    </div>
+{% else %}
+    <p>You have not submitted KYC yet.</p>
+    <a href="{% url 'kyc_submit' %}" class="btn btn-warning">Submit KYC</a>
+{% endif %}
+
+{% endblock %}
