@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Wallet(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="deposits")
     is_demo = models.BooleanField(default=False, db_index=True)  # False = Real, True = Demo
     cash_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gold_balance = models.DecimalField(max_digits=12, decimal_places=4, default=0)
@@ -16,7 +16,7 @@ class Wallet(models.Model):
         return f"{self.user.username} - {'DEMO' if self.is_demo else 'REAL'}"
         
 class BankDeposit(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bank_deposits")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     reference_no = models.CharField(max_length=100)
     slip = models.ImageField(upload_to='bank_slips/')
@@ -33,13 +33,16 @@ class BankDeposit(models.Model):
         return f"{self.user.username} - {self.amount} LKR"
 
 class Transaction(models.Model):
-    TRANSACTION_TYPES = [
+    transaction_type = models.CharField(
+    max_length=20,
+    choices=[
         ("BUY", "Buy"),
         ("SELL", "Sell"),
         ("DEPOSIT", "Deposit"),
         ("WITHDRAW", "Withdraw"),
     ]
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    )
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     gold_amount = models.DecimalField(max_digits=10, decimal_places=4, default=0)
     price_per_gram = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -78,7 +81,7 @@ class KYC(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     full_name = models.CharField(max_length=150)
-    nic_number = models.CharField(max_length=50)
+    nic_number = models.CharField(max_length=50, unique=True)
     dob = models.DateField()
     address = models.TextField()
 
