@@ -823,66 +823,29 @@ def kyc_status(request):
 # Staff: My KYC
 # =========================
 @staff_member_required
-def staff_kyc_list(request):
-    kycs = KYC.objects.select_related("user").order_by("-submitted_at")
-    return render(request, "goldtrade/staff_kyc_list.html", {"kycs": kycs})
+def kyc_admin_list(request):
+    status = request.GET.get("status", "pending")
+
+    if status not in ["pending", "approved", "rejected", "all"]:
+        status = "pending"
+
+    if status == "all":
+        kycs = KYC.objects.select_related("user").order_by("-created_at")
+    else:
+        kycs = KYC.objects.filter(status=status).select_related("user").order_by("-created_at")
+
+    return render(request, "goldtrade/kyc_admin_list.html", {
+        "kycs": kycs,
+        "status": status,
+    })
 
 # =========================
-# Staff: My KYC Appove
-# =========================
-@staff_member_required
-def staff_kyc_approve(request, pk):
-    kyc = get_object_or_404(KYC, id=pk)
-
-    if kyc.status == "approved":
-        messages.info(request, "KYC already approved.")
-        return redirect("staff_kyc")
-
-    kyc.status = "approved"
-    kyc.save(update_fields=["status"])
-
-    # Notify user
-    if kyc.user.email:
-        notify_user_email(
-            kyc.user.email,
-            "KYC Approved – Hifas Jewellery",
-            f"""
-            <p>Hi {kyc.user.username},</p>
-            <p>Your KYC verification has been <b style='color:green;'>APPROVED</b>.</p>
-            <p>You can now trade without restrictions.</p>
-            <p>— Hifas Jewellery</p>
-            """
-        )
-
-    messages.success(request, f"KYC approved for {kyc.user.username} ✓")
-    return redirect("staff_kyc")
-
-# =========================
-# Staff: My KYC Reject
+# Staff: My KYC review
 # =========================
 @staff_member_required
-def staff_kyc_reject(request, pk):
+def kyc_admin_review(request, pk):
     kyc = get_object_or_404(KYC, id=pk)
 
-    if kyc.status == "rejected":
-        messages.info(request, "KYC already rejected.")
-        return redirect("staff_kyc")
-
-    kyc.status = "rejected"
-    kyc.save(update_fields=["status"])
-
-    if kyc.user.email:
-        notify_user_email(
-            kyc.user.email,
-            "KYC Rejected – Hifas Jewellery",
-            f"""
-            <p>Hi {kyc.user.username},</p>
-            <p>Your KYC verification has been <b style='color:red;'>REJECTED</b>.</p>
-            <p>Please update your details and resubmit.</p>
-            <p>— Hifas Jewellery</p>
-            """
-        )
-
-    messages.warning(request, f"KYC rejected for {kyc.user.username}.")
-    return redirect("staff_kyc")
-
+    return render(request, "goldtrade/kyc_admin_review.html", {
+        "kyc": kyc
+    })
