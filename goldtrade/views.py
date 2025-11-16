@@ -12,10 +12,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.timezone import localtime, now, timedelta
+from django.utils import timezone
 from django.views.decorators.cache import cache_page
 from django.db import transaction as db_tx  # alias for clarity
 
 from .models import BankDeposit, GoldRate, Transaction, Wallet
+from .models import KYC
 
 # =========================
 # Email Helper
@@ -36,7 +38,6 @@ def notify_user_email(to_email: str, subject: str, html_body: str) -> None:
         # Intentionally silent: do not break user flows if SMTP has issues.
         pass
 
-
 # =========================
 # Gold Price Helper
 # =========================
@@ -53,7 +54,6 @@ def get_gold_price():
             "last_updated": gold.last_updated,
         }
     return {"buy_rate": Decimal("0"), "sell_rate": Decimal("0"), "last_updated": None}
-
 
 # =========================
 # Wallet Helpers (Session)
@@ -85,7 +85,6 @@ def _get_selected_wallet(request):
     _ensure_both_wallets(request)
     return wallet, is_demo
 
-
 # =========================
 # Mode Switch
 # =========================
@@ -94,7 +93,6 @@ def switch_wallet(request, mode):
     request.session["wallet_mode"] = "demo" if mode == "demo" else "real"
     nxt = request.GET.get("next") or "dashboard"
     return redirect(nxt)
-
 
 # =========================
 # Dashboard
@@ -121,7 +119,6 @@ def dashboard(request):
         "last_updated": gold_rate.last_updated if gold_rate else None,
     }
     return render(request, "goldtrade/dashboard.html", context)
-
 
 # =========================
 # BUY GOLD
@@ -308,7 +305,17 @@ def add_money(request):
 # =========================
 @login_required
 def withdraw_money(request):
-    wallet = Wallet.objects.get(user=request.user, is_demo=False)
+    # Retrieve the wallet outside the atomic block first,
+    # then re-fetch it inside the block using select_for_update.
+    # Use get_object_or_404 for better error handling if Wallet doesn't exist.
+    try:
+        wallet = Wallet.objects.get(user=request.user, is_demo=False)
+    except Wallet.DoesNotExist:
+        messages.error(request, "Wallet not found.")
+        return redirect("dashboard") # Redirect to a safe page
+    if not kyc_required(request.user):
+        messages.warning(request, "⚠️ Please complete and approve your KYC before using this feature.")
+        return redirect("kyc_status")
 
     if request.method == "POST":
         # Basic validation before DB work
@@ -326,25 +333,41 @@ def withdraw_money(request):
         if amount <= 0 or not all([bank_name, account_name, account_number, branch]):
             messages.error(request, "Please fill in all fields with valid values.")
             return redirect("withdraw_money")
+            
+        # 🚨 CRITICAL ADDITION: Check for sufficient balance
+        try:
+            with transaction.atomic():
+                # 1. Re-fetch and LOCK the wallet record
+                locked_wallet = Wallet.objects.select_for_update().get(pk=wallet.pk)
 
-        # Guard: only one pending withdrawal at a time
-        if Transaction.objects.filter(
-            wallet=wallet, transaction_type="WITHDRAW", status="pending"
-        ).exists():
-            messages.warning(
-                request, "You already have a pending withdrawal request."
-            )
-            return redirect("transactions")
+                # 2. Insufficient Balance Check
+                if amount > locked_wallet.balance:
+                    messages.error(request, "Insufficient balance in your wallet to process this withdrawal.")
+                    return redirect("withdraw_money") # This redirect breaks the atomic block gracefully
 
-        # We DO NOT deduct balance here; deduction happens on admin approval
-        tx = Transaction.objects.create(
-            wallet=wallet,
-            transaction_type="WITHDRAW",
-            total_amount=amount,
-            remarks=f"{bank_name} - {branch} | {account_name} ({account_number})",
-            status="pending",
-        )
+                # 3. Pending Transaction Guard (Now safe inside the lock)
+                if Transaction.objects.filter(
+                    wallet=locked_wallet, transaction_type="WITHDRAW", status="pending"
+                ).exists():
+                    messages.warning(
+                        request, "You already have a pending withdrawal request."
+                    )
+                    return redirect("transactions") # Breaks the atomic block
 
+                # 4. Create Transaction (Deduction still on admin approval)
+                tx = Transaction.objects.create(
+                    wallet=locked_wallet, # Use the locked wallet instance
+                    transaction_type="WITHDRAW",
+                    total_amount=amount,
+                    remarks=f"{bank_name} - {branch} | {account_name} ({account_number})",
+                    status="pending",
+                )
+
+        except Exception as e:
+            # Handle potential database errors, e.g., deadlocks (rare)
+            messages.error(request, "A temporary error occurred during processing. Please try again.")
+            # log the error (e)
+            return redirect("withdraw_money")
         # Notify the user
         user = request.user
         if user.email:
@@ -401,7 +424,6 @@ def refresh_rates(request):
         data = {"buy_rate": 0, "sell_rate": 0, "last_updated": None}
     return JsonResponse(data)
 
-
 def gold_price_history(request):
     last_30_days = now() - timedelta(days=30)
     history = GoldRate.objects.filter(
@@ -447,7 +469,6 @@ def update_gold_rate(request):
         },
     )
 
-
 # =========================
 # My Deposits (user)
 # =========================
@@ -458,7 +479,6 @@ def my_deposits(request):
     return render(
         request, "goldtrade/my_deposits.html", {"deposits": deposits, "wallet": wallet}
     )
-
 
 # =========================
 # Staff: Deposits list
@@ -731,8 +751,7 @@ def register_view(request):
             return redirect("register")
 
     return render(request, "register.html")
-
-
+    
 def forgot_password(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -758,34 +777,119 @@ def forgot_password(request):
 # =========================
 # My KYC
 # =========================
-
 @login_required
-def kyc_submit(request):
+def kyc_form(request):
+    """User can submit or update their KYC."""
+
+    try:
+        kyc = KYC.objects.get(user=request.user)
+    except KYC.DoesNotExist:
+        kyc = None
+
     if request.method == "POST":
-        KYC.objects.update_or_create(
-            user=request.user,
-            defaults={
-                "full_name": request.POST["full_name"],
-                "nic_number": request.POST["nic_number"],
-                "dob": request.POST["dob"],
-                "address": request.POST["address"],
-                "selfie": request.FILES["selfie"],
-                "nic_front": request.FILES["nic_front"],
-                "nic_back": request.FILES["nic_back"],
-                "signature": request.FILES["signature"],
-                "bank_name": request.POST["bank_name"],
-                "account_number": request.POST["account_number"],
-                "branch": request.POST["branch"],
-                "status": "pending",
-                "rejection_reason": None,
-            },
-        )
-        messages.success(request, "KYC submitted successfully! Please wait for approval.")
+        full_name = request.POST.get("full_name")
+        nic_number = request.POST.get("nic_number")
+        dob = request.POST.get("dob")
+        address = request.POST.get("address")
+
+        bank_name = request.POST.get("bank_name")
+        account_number = request.POST.get("account_number")
+        branch = request.POST.get("branch")
+
+        selfie = request.FILES.get("selfie")
+        nic_front = request.FILES.get("nic_front")
+        nic_back = request.FILES.get("nic_back")
+        signature = request.FILES.get("signature")
+
+        if kyc is None:
+            kyc = KYC.objects.create(
+                user=request.user,
+                full_name=full_name,
+                nic_number=nic_number,
+                dob=dob,
+                address=address,
+                bank_name=bank_name,
+                account_number=account_number,
+                branch=branch,
+                selfie=selfie,
+                nic_front=nic_front,
+                nic_back=nic_back,
+                signature=signature,
+            )
+            messages.success(request, "🎉 KYC submitted successfully! Please wait for approval.")
+        else:
+            # Update KYC
+            kyc.full_name = full_name
+            kyc.nic_number = nic_number
+            kyc.dob = dob
+            kyc.address = address
+            kyc.bank_name = bank_name
+            kyc.account_number = account_number
+            kyc.branch = branch
+
+            if selfie:
+                kyc.selfie = selfie
+            if nic_front:
+                kyc.nic_front = nic_front
+            if nic_back:
+                kyc.nic_back = nic_back
+            if signature:
+                kyc.signature = signature
+
+            kyc.status = "pending"  # reset status
+            kyc.reviewed_at = None
+            kyc.save()
+
+            messages.success(request, "📝 KYC updated and resubmitted for verification.")
+
         return redirect("kyc_status")
 
-    return render(request, "goldtrade/kyc_form.html")
+    return render(request, "goldtrade/kyc_form.html", {"kyc": kyc})
+
+# =========================
+# My KYC Status
+# =========================
 @login_required
 def kyc_status(request):
-    kyc = KYC.objects.filter(user=request.user).first()
+    try:
+        kyc = KYC.objects.get(user=request.user)
+    except KYC.DoesNotExist:
+        return redirect("kyc_form")
+
     return render(request, "goldtrade/kyc_status.html", {"kyc": kyc})
 
+# =========================
+# Staff: My KYC
+# =========================
+@staff_member_required
+def staff_kyc_list(request):
+    kycs = KYC.objects.all().order_by("-submitted_at")
+    return render(request, "goldtrade/admin/kyc_list.html", {"kycs": kycs})
+
+@staff_member_required
+def staff_kyc_approve(request, pk):
+    kyc = get_object_or_404(KYC, pk=pk)
+    kyc.status = "approved"
+    kyc.reviewed_at = timezone.now()
+    kyc.rejection_reason = None
+    kyc.save()
+
+    messages.success(request, "KYC approved successfully!")
+    return redirect("staff_kyc_list")
+
+@staff_member_required
+def staff_kyc_reject(request, pk):
+    kyc = get_object_or_404(KYC, pk=pk)
+    reason = request.POST.get("reason", "")
+    kyc.status = "rejected"
+    kyc.rejection_reason = reason
+    kyc.reviewed_at = timezone.now()
+    kyc.save()
+
+    messages.error(request, "KYC rejected.")
+    return redirect("staff_kyc_list")
+def kyc_required(user):
+    try:
+        return user.kyc.status == "approved"
+    except:
+        return False
