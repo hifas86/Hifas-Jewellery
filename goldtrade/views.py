@@ -779,72 +779,33 @@ def forgot_password(request):
 # =========================
 @login_required
 def kyc_form(request):
-    """User can submit or update their KYC."""
-
     try:
         kyc = KYC.objects.get(user=request.user)
+        is_edit = True
     except KYC.DoesNotExist:
         kyc = None
+        is_edit = False
 
     if request.method == "POST":
-        full_name = request.POST.get("full_name")
-        nic_number = request.POST.get("nic_number")
-        dob = request.POST.get("dob")
-        address = request.POST.get("address")
-
-        bank_name = request.POST.get("bank_name")
-        account_number = request.POST.get("account_number")
-        branch = request.POST.get("branch")
-
-        selfie = request.FILES.get("selfie")
-        nic_front = request.FILES.get("nic_front")
-        nic_back = request.FILES.get("nic_back")
-        signature = request.FILES.get("signature")
-
-        if kyc is None:
-            kyc = KYC.objects.create(
-                user=request.user,
-                full_name=full_name,
-                nic_number=nic_number,
-                dob=dob,
-                address=address,
-                bank_name=bank_name,
-                account_number=account_number,
-                branch=branch,
-                selfie=selfie,
-                nic_front=nic_front,
-                nic_back=nic_back,
-                signature=signature,
-            )
-            messages.success(request, "🎉 KYC submitted successfully! Please wait for approval.")
+        form = KYCForm(request.POST, request.FILES, instance=kyc)
+        
+        if form.is_valid():
+            k = form.save(commit=False)
+            k.user = request.user
+            k.status = "pending"
+            k.save()
+            messages.success(request, "KYC submitted successfully! 📝")
+            return redirect("kyc_form")
         else:
-            # Update KYC
-            kyc.full_name = full_name
-            kyc.nic_number = nic_number
-            kyc.dob = dob
-            kyc.address = address
-            kyc.bank_name = bank_name
-            kyc.account_number = account_number
-            kyc.branch = branch
+            messages.error(request, "Please correct the errors and try again.")
+    else:
+        form = KYCForm(instance=kyc)
 
-            if selfie:
-                kyc.selfie = selfie
-            if nic_front:
-                kyc.nic_front = nic_front
-            if nic_back:
-                kyc.nic_back = nic_back
-            if signature:
-                kyc.signature = signature
-
-            kyc.status = "pending"  # reset status
-            kyc.reviewed_at = None
-            kyc.save()
-
-            messages.success(request, "📝 KYC updated and resubmitted for verification.")
-
-        return redirect("kyc_status")
-
-    return render(request, "goldtrade/kyc_form.html", {"kyc": kyc})
+    return render(request, "goldtrade/kyc_form.html", {
+        "form": form,
+        "kyc": kyc,
+        "is_edit": is_edit,
+    })
 
 # =========================
 # My KYC Status
