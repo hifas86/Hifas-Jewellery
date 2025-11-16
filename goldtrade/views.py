@@ -125,6 +125,9 @@ def dashboard(request):
 # =========================
 @login_required
 def buy_gold(request):
+    if not kyc_required(request.user):
+        messages.error(request, "KYC approval is required to buy gold.")
+        return redirect("kyc_form")
     rates = get_gold_price()
 
     if request.method == "POST":
@@ -197,6 +200,9 @@ def buy_gold(request):
 # =========================
 @login_required
 def sell_gold(request):
+    if not kyc_required(request.user):
+        messages.error(request, "KYC approval is required to sell gold.")
+        return redirect("kyc_form")
     rates = get_gold_price()
 
     if request.method == "POST":
@@ -313,10 +319,6 @@ def withdraw_money(request):
     except Wallet.DoesNotExist:
         messages.error(request, "Wallet not found.")
         return redirect("dashboard") # Redirect to a safe page
-    if not kyc_required(request.user):
-        messages.warning(request, "⚠️ Please complete and approve your KYC before using this feature.")
-        return redirect("kyc_status")
-
     if request.method == "POST":
         # Basic validation before DB work
         try:
@@ -806,7 +808,11 @@ def kyc_form(request):
         "kyc": kyc,
         "is_edit": is_edit,
     })
-
+def kyc_required(user):
+    try:
+        return KYC.objects.get(user=user).status == "approved"
+    except KYC.DoesNotExist:
+        return False
 # =========================
 # My KYC Status
 # =========================
