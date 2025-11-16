@@ -1,50 +1,74 @@
-{% extends "base.html" %}
-{% block title %}KYC Verification{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}KYC Verification - Hifas Jewellery{% endblock %}
+
 {% block content %}
+<h3 class="fw-bold text-light mb-3">📝 KYC Verification</h3>
 
-<h3 class="text-warning fw-bold mb-4">🛡️ KYC Verification</h3>
+<div class="card p-4" style="background:#131b2e; border:1px solid gold; border-radius:12px;">
 
-<form method="POST" enctype="multipart/form-data" class="card p-4" style="background:#111827; border:1px solid #d4af37;">
-    {% csrf_token %}
+    {% if kyc %}
+        <div class="alert alert-info">
+            Current Status: 
+            {% if kyc.status == "pending" %}
+                <span class="badge bg-warning text-dark">Pending</span>
+            {% elif kyc.status == "approved" %}
+                <span class="badge bg-success">Approved</span>
+            {% else %}
+                <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+        </div>
+    {% endif %}
 
-    <label class="fw-bold text-warning">Full Name</label>
-    <input type="text" name="full_name" class="form-control mb-3" required>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
 
-    <label class="fw-bold text-warning">NIC / Passport No</label>
-    <input type="text" name="nic_number" class="form-control mb-3" required>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Full Name</label>
+                {{ form.full_name }}
+            </div>
 
-    <label class="fw-bold text-warning">Date of Birth</label>
-    <input type="date" name="dob" class="form-control mb-3" required>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Date of Birth</label>
+                {{ form.dob }}
+            </div>
 
-    <label class="fw-bold text-warning">Address</label>
-    <textarea name="address" class="form-control mb-3" required></textarea>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">NIC Number</label>
+                {{ form.nic_number }}
+            </div>
 
-    <label class="fw-bold text-warning">Selfie Photo</label>
-    <input type="file" name="selfie" class="form-control mb-3" accept="image/*" required>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Phone</label>
+                {{ form.phone }}
+            </div>
 
-    <label class="fw-bold text-warning">NIC Front Image</label>
-    <input type="file" name="nic_front" class="form-control mb-3" accept="image/*" required>
+            <div class="col-12 mb-3">
+                <label class="form-label">Address</label>
+                {{ form.address }}
+            </div>
 
-    <label class="fw-bold text-warning">NIC Back Image</label>
-    <input type="file" name="nic_back" class="form-control mb-3" accept="image/*" required>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">NIC Front</label>
+                {{ form.nic_front }}
+            </div>
 
-    <label class="fw-bold text-warning">Signature Image</label>
-    <input type="file" name="signature" class="form-control mb-3" accept="image/*" required>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">NIC Back</label>
+                {{ form.nic_back }}
+            </div>
 
-    <hr class="border-warning">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Selfie (holding NIC)</label>
+                {{ form.selfie }}
+            </div>
+        </div>
 
-    <h5 class="text-warning fw-bold">💳 Bank Details</h5>
-
-    <label class="fw-bold text-warning">Bank Name</label>
-    <input type="text" name="bank_name" class="form-control mb-3" required>
-
-    <label class="fw-bold text-warning">Account Number</label>
-    <input type="text" name="account_number" class="form-control mb-3" required>
-
-    <label class="fw-bold text-warning">Branch</label>
-    <input type="text" name="branch" class="form-control mb-3" required>
-
-    <button class="btn btn-warning w-100 fw-bold">Submit KYC</button>
-</form>
-
+        <button class="btn btn-warning fw-bold w-100 mt-3">
+            {% if is_edit %}Update KYC{% else %}Submit KYC{% endif %}
+        </button>
+    </form>
+</div>
 {% endblock %}
