@@ -52,7 +52,8 @@ urlpatterns = [
     path('staff/withdrawals/<int:pk>/reject/', views.reject_withdrawal, name='reject_withdrawal'),
 
     # Admin KYC approval
-    path("staff/kyc/", views.staff_kyc_list, name="staff_kyc"),
-    path("staff/kyc/<int:pk>/approve/", views.staff_kyc_approve, name="staff_kyc_approve"),
-    path("staff/kyc/<int:pk>/reject/", views.staff_kyc_reject, name="staff_kyc_reject"),
+    path("staff/kyc/", views.kyc_admin_list, name="kyc_admin_list"),
+    path("staff/kyc/<int:pk>/review/", views.kyc_admin_review, name="kyc_admin_review"),
+    path("staff/kyc/<int:pk>/approve/", views.kyc_admin_approve, name="kyc_admin_approve"),
+    path("staff/kyc/<int:pk>/reject/", views.kyc_admin_reject, name="kyc_admin_reject"),
 ]
