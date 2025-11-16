@@ -808,6 +808,59 @@ def kyc_form(request):
     })
 
 # =========================
+# My KYC Submit
+# =========================
+@login_required
+def kyc_submit(request):
+    existing = KYC.objects.filter(user=request.user).first()
+
+    if request.method == "POST":
+        nic_number = request.POST.get("nic_number")
+        dob = request.POST.get("dob")
+        phone = request.POST.get("phone")
+
+        nic_front = request.FILES.get("nic_front")
+        nic_back = request.FILES.get("nic_back")
+        selfie = request.FILES.get("selfie")
+
+        if not all([nic_number, dob, phone, nic_front, nic_back, selfie]):
+            messages.error(request, "All fields & images are required.")
+            return redirect("kyc_submit")
+
+        # IF USER ALREADY SUBMITTED → UPDATE EXISTING
+        if existing:
+            existing.nic_number = nic_number
+            existing.dob = dob
+            existing.phone = phone
+            existing.nic_front = nic_front
+            existing.nic_back = nic_back
+            existing.selfie = selfie
+            existing.status = "pending"
+            existing.save()
+
+            messages.success(request, "KYC updated successfully & sent for review.")
+            return redirect("kyc_submit")
+
+        # NEW SUBMISSION
+        KYC.objects.create(
+            user=request.user,
+            nic_number=nic_number,
+            dob=dob,
+            phone=phone,
+            nic_front=nic_front,
+            nic_back=nic_back,
+            selfie=selfie,
+            status="pending",
+        )
+
+        messages.success(request, "KYC submitted successfully! Awaiting approval.")
+        return redirect("kyc_submit")
+
+    return render(request, "goldtrade/kyc_submit.html", {
+        "kyc": existing
+    })
+
+# =========================
 # My KYC Status
 # =========================
 @login_required
