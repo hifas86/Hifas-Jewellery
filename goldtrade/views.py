@@ -311,16 +311,20 @@ def add_money(request):
 # =========================
 @login_required
 def withdraw_money(request):
-    # Retrieve the wallet outside the atomic block first,
-    # then re-fetch it inside the block using select_for_update.
-    # Use get_object_or_404 for better error handling if Wallet doesn't exist.
+    # Require KYC approval
+    if not kyc_required(request.user):
+        messages.error(request, "KYC approval is required before withdrawing money.")
+        return redirect("kyc_form")
+
+    # Retrieve wallet safely
     try:
         wallet = Wallet.objects.get(user=request.user, is_demo=False)
     except Wallet.DoesNotExist:
         messages.error(request, "Wallet not found.")
-        return redirect("dashboard") # Redirect to a safe page
+        return redirect("dashboard")
+
     if request.method == "POST":
-        # Basic validation before DB work
+        # Basic validation
         try:
             amount = Decimal(request.POST.get("amount") or "0")
         except Exception:
@@ -335,42 +339,44 @@ def withdraw_money(request):
         if amount <= 0 or not all([bank_name, account_name, account_number, branch]):
             messages.error(request, "Please fill in all fields with valid values.")
             return redirect("withdraw_money")
-            
-        # 🚨 CRITICAL ADDITION: Check for sufficient balance
+
+        # -------------------------------
+        # ATOMIC BLOCK + LOCKING
+        # -------------------------------
         try:
-            with transaction.atomic():
-                # 1. Re-fetch and LOCK the wallet record
+            with db_tx.atomic():
+
+                # 1. LOCK the wallet row
                 locked_wallet = Wallet.objects.select_for_update().get(pk=wallet.pk)
 
-                # 2. Insufficient Balance Check
-                if amount > locked_wallet.balance:
-                    messages.error(request, "Insufficient balance in your wallet to process this withdrawal.")
-                    return redirect("withdraw_money") # This redirect breaks the atomic block gracefully
+                # 2. Check sufficient balance
+                if amount > locked_wallet.cash_balance:
+                    messages.error(request, "Insufficient wallet balance.")
+                    return redirect("withdraw_money")
 
-                # 3. Pending Transaction Guard (Now safe inside the lock)
+                # 3. Pending withdrawal guard
                 if Transaction.objects.filter(
-                    wallet=locked_wallet, transaction_type="WITHDRAW", status="pending"
+                    wallet=locked_wallet,
+                    transaction_type="WITHDRAW",
+                    status="pending"
                 ).exists():
-                    messages.warning(
-                        request, "You already have a pending withdrawal request."
-                    )
-                    return redirect("transactions") # Breaks the atomic block
+                    messages.warning(request, "You already have a pending withdrawal request.")
+                    return redirect("transactions")
 
-                # 4. Create Transaction (Deduction still on admin approval)
+                # 4. Create pending withdrawal (DEDUCTION happens on admin approval)
                 tx = Transaction.objects.create(
-                    wallet=locked_wallet, # Use the locked wallet instance
+                    wallet=locked_wallet,
                     transaction_type="WITHDRAW",
                     total_amount=amount,
                     remarks=f"{bank_name} - {branch} | {account_name} ({account_number})",
                     status="pending",
                 )
 
-        except Exception as e:
-            # Handle potential database errors, e.g., deadlocks (rare)
-            messages.error(request, "A temporary error occurred during processing. Please try again.")
-            # log the error (e)
+        except Exception:
+            messages.error(request, "A temporary error occurred. Please try again.")
             return redirect("withdraw_money")
-        # Notify the user
+
+        # Email notification
         user = request.user
         if user.email:
             notify_user_email(
@@ -378,15 +384,16 @@ def withdraw_money(request):
                 "Withdrawal Request Received – Hifas Jewellery",
                 f"""
                 <p>Hi {user.username},</p>
-                <p>We have received your withdrawal request and it's now <b>pending review</b>.</p>
-                <p><b>Amount:</b> Rs. {amount:,.2f}<br>
-                   <b>Bank Details:</b> {bank_name} - {branch} | {account_name} ({account_number})</p>
-                <p>We'll notify you once it's approved or if we need more information.</p>
+                <p>Your withdrawal request has been submitted and is now <b>pending review</b>.</p>
+                <p><b>Amount:</b> Rs. {amount:,.2f}</p>
+                <p><b>Bank:</b> {bank_name} - {branch}</p>
+                <p><b>Account:</b> {account_name} ({account_number})</p>
+                <p>We will notify you once it is processed.</p>
                 <p>— Hifas Jewellery</p>
-                """,
+                """
             )
 
-        messages.success(request, "Withdrawal request submitted ✅ Awaiting admin approval.")
+        messages.success(request, "Withdrawal request submitted 🎉 Awaiting admin approval.")
         return redirect("withdraw_confirm", tx_id=tx.id)
 
     return render(request, "goldtrade/withdraw.html", {"wallet": wallet})
@@ -808,11 +815,18 @@ def kyc_form(request):
         "kyc": kyc,
         "is_edit": is_edit,
     })
+
+# =========================
+# KYC Helper
+# =========================
 def kyc_required(user):
+    from .models import KYC
     try:
-        return KYC.objects.get(user=user).status == "approved"
+        kyc = KYC.objects.get(user=user)
+        return kyc.status == "approved"
     except KYC.DoesNotExist:
         return False
+        
 # =========================
 # My KYC Status
 # =========================
