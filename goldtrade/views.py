@@ -19,6 +19,8 @@ from django.db import transaction as db_tx  # alias for clarity
 from .models import BankDeposit, GoldRate, Transaction, Wallet
 from .models import KYC
 
+from .forms import KYCForm
+
 # =========================
 # Email Helper
 # =========================
@@ -504,14 +506,16 @@ def staff_deposits(request):
     return render(
         request, "goldtrade/staff_deposits.html", {"deposits": qs, "q": q, "status": status}
     )
-from django.core.paginator import Paginator
 
 # =========================
 # My Withdrawals (user)
 # =========================
 @login_required
 def my_withdrawals(request):
-    withdrawals = Withdrawal.objects.filter(user=request.user).order_by("-created_at")
+    withdrawals = Transaction.objects.filter(
+        wallet__user=request.user,
+        transaction_type="WITHDRAW"
+    ).order_by("-timestamp")
 
     return render(request, "goldtrade/my_withdrawals.html", {
         "withdrawals": withdrawals
@@ -723,65 +727,6 @@ def live_notifications(request):
         "deposits": deposit_count,
         "withdrawals": withdraw_count
     })
-
-# =========================
-# Auth: Register + Forgot Password
-# =========================
-def register_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
-
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match.")
-            return redirect("register")
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists.")
-            return redirect("register")
-
-        try:
-            # If you later add cross-table writes here, keep them in one atomic block.
-            with db_tx.atomic():
-                user = User.objects.create_user(
-                    username=username, email=email, password=password
-                )
-                # Initialize wallets on registration
-                Wallet.objects.create(
-                    user=user, is_demo=True, cash_balance=Decimal("500000.00")
-                )
-                Wallet.objects.create(user=user, is_demo=False)  # starts at 0
-            messages.success(request, "Account created successfully! Please log in.")
-            return redirect("login")
-        except Exception:
-            messages.error(request, "Registration failed due to an error.")
-            return redirect("register")
-
-    return render(request, "register.html")
-    
-def forgot_password(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        user = User.objects.filter(email=email).first()
-
-        if not user:
-            messages.error(request, "No account found with this email.")
-            return redirect("forgot_password")
-
-        # Send temporary dummy link (replace with a secure token flow later)
-        send_mail(
-            "Reset your Digital Gold account password",
-            "Click here to reset your password: http://127.0.0.1:8000/reset-confirm/",
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-        )
-
-        messages.success(request, "Reset link sent to your email ✅")
-        return redirect("forgot_password")
-
-    return render(request, "forgot_password.html")
 
 # =========================
 # My KYC
