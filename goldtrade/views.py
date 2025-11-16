@@ -824,8 +824,8 @@ def kyc_status(request):
 # =========================
 @staff_member_required
 def staff_kyc_list(request):
-    kycs = KYC.objects.all().order_by("-submitted_at")
-    return render(request, "goldtrade/admin/kyc_list.html", {"kycs": kycs})
+    kycs = KYC.objects.select_related("user").order_by("-submitted_at")
+    return render(request, "goldtrade/staff_kyc_list.html", {"kycs": kycs})
 
 @staff_member_required
 def staff_kyc_approve(request, pk):
