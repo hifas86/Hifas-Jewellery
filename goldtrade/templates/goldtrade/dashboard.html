@@ -29,6 +29,13 @@ canvas {
   background-color: #0d1221;
   border-radius: 8px;
 }
+{% if not kyc or kyc.status != "approved" %}
+<div class="alert alert-warning text-dark fw-bold">
+    ⚠️ Your KYC is <b>{{ kyc.status|title if kyc else "Not Submitted" }}</b>. 
+    Please complete verification to enable full trading.
+    <a href="{% url 'kyc_form' %}" class="ms-2 btn btn-sm btn-dark">Update KYC</a>
+</div>
+{% endif %}
 
 
 </style>
