@@ -100,34 +100,29 @@ class GoldRate(models.Model):
 # KYC MODEL
 # -------------------------
 class KYC(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    
+    full_name = models.CharField(max_length=150)
+    dob = models.DateField()
+    nic_number = models.CharField(max_length=12)
+    address = models.TextField()
+    phone = models.CharField(max_length=10)
 
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+    nic_front = models.ImageField(upload_to='kyc/')
+    nic_back = models.ImageField(upload_to='kyc/')
+    selfie = models.ImageField(upload_to='kyc/')
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected"),
+        ],
+        default="pending"
     )
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-
-    full_name = models.CharField(max_length=150)
-    nic_number = models.CharField(max_length=12, unique=True)
-    dob = models.DateField()
-    address = models.TextField()
-
-    selfie = models.ImageField(upload_to="kyc/selfie/")
-    nic_front = models.ImageField(upload_to="kyc/nic_front/")
-    nic_back = models.ImageField(upload_to="kyc/nic_back/")
-    signature = models.ImageField(upload_to="kyc/signature/")
-
-    bank_name = models.CharField(max_length=100)
-    account_number = models.CharField(max_length=50)
-    branch = models.CharField(max_length=100)
-
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
-    rejection_reason = models.TextField(blank=True, null=True)
-
     submitted_at = models.DateTimeField(auto_now_add=True)
-    reviewed_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.status}"
+        return f"KYC - {self.user.username}"
