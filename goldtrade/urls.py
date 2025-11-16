@@ -3,8 +3,12 @@ from django.urls import path
 from . import views, views_auth
 
 urlpatterns = [
-        # Live notifications
+    # Live notifications
     path("live-notifications/", views.live_notifications, name="live_notifications"),  # ✅ Now works
+
+    # KYC
+    path("kyc/", views.kyc_form, name="kyc_form"),
+    path("kyc/status/", views.kyc_status, name="kyc_status"),
     
     # Authentication
     path('login/', views_auth.login_view, name='login'),
@@ -49,6 +53,8 @@ urlpatterns = [
     path('staff/withdrawals/<int:pk>/approve/', views.approve_withdrawal, name='approve_withdrawal'),
     path('staff/withdrawals/<int:pk>/reject/', views.reject_withdrawal, name='reject_withdrawal'),
 
-
-    
+    # Admin KYC approval
+    path("staff/kyc/", views.staff_kyc_list, name="staff_kyc_list"),
+    path("staff/kyc/<int:pk>/approve/", views.staff_kyc_approve, name="staff_kyc_approve"),
+    path("staff/kyc/<int:pk>/reject/", views.staff_kyc_reject, name="staff_kyc_reject"),
 ]
