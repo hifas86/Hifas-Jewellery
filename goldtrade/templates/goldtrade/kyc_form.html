@@ -1,74 +1,125 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}KYC Verification - Hifas Jewellery{% endblock %}
+{% block title %}KYC Verification – Hifas Jewellery{% endblock %}
 
 {% block content %}
-<h3 class="fw-bold text-light mb-3">📝 KYC Verification</h3>
 
-<div class="card p-4" style="background:#131b2e; border:1px solid gold; border-radius:12px;">
+<style>
+.kyc-card {
+    background: #10192c;
+    border: 1px solid #d4af37;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(212,175,55,0.25);
+}
+
+.kyc-card h3 {
+    color: gold;
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(255,215,0,0.6);
+}
+
+.kyc-label { 
+    color: #ffe27a; 
+    font-weight: 600; 
+}
+
+.kyc-input {
+    background: #0d1323;
+    color: white;
+    border: 1px solid #d4af37;
+}
+
+.kyc-input:focus {
+    box-shadow: 0 0 8px gold;
+    border-color: gold;
+}
+
+.upload-box {
+    background: #0d1221;
+    border: 2px dashed #d4af37;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    color: gold;
+    transition: 0.3s;
+}
+
+.upload-box:hover {
+    background: #1a2337;
+    transform: scale(1.03);
+}
+</style>
+
+<div class="kyc-card">
+    <h3 class="mb-4">🛡️ KYC Verification</h3>
 
     {% if kyc %}
         <div class="alert alert-info">
-            Current Status: 
-            {% if kyc.status == "pending" %}
-                <span class="badge bg-warning text-dark">Pending</span>
-            {% elif kyc.status == "approved" %}
-                <span class="badge bg-success">Approved</span>
-            {% else %}
-                <span class="badge bg-danger">Rejected</span>
+            <b>Status:</b>
+            {% if kyc.status == 'pending' %}
+                <span class="text-warning">⏳ Pending Review</span>
+            {% elif kyc.status == 'approved' %}
+                <span class="text-success">✔ Approved</span>
+            {% elif kyc.status == 'rejected' %}
+                <span class="text-danger">❌ Rejected – Please update & resubmit</span>
             {% endif %}
         </div>
     {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
+    <form action="" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Full Name</label>
-                {{ form.full_name }}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="kyc-label">NIC Number</label>
+                <input type="text" name="nic_number" class="form-control kyc-input"
+                       value="{{ form.nic_number.value|default:'' }}" required>
             </div>
 
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Date of Birth</label>
-                {{ form.dob }}
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="form-label">NIC Number</label>
-                {{ form.nic_number }}
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Phone</label>
-                {{ form.phone }}
-            </div>
-
-            <div class="col-12 mb-3">
-                <label class="form-label">Address</label>
-                {{ form.address }}
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">NIC Front</label>
-                {{ form.nic_front }}
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">NIC Back</label>
-                {{ form.nic_back }}
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Selfie (holding NIC)</label>
-                {{ form.selfie }}
+            <div class="col-md-6">
+                <label class="kyc-label">Date of Birth</label>
+                <input type="date" name="dob" class="form-control kyc-input"
+                       value="{{ form.dob.value|default:'' }}" required>
             </div>
         </div>
 
-        <button class="btn btn-warning fw-bold w-100 mt-3">
-            {% if is_edit %}Update KYC{% else %}Submit KYC{% endif %}
+        <div class="mb-3">
+            <label class="kyc-label">Phone Number</label>
+            <input type="text" name="phone" class="form-control kyc-input"
+                   value="{{ form.phone.value|default:'' }}" required>
+        </div>
+
+        <hr class="my-4" style="border:1px solid #d4af37">
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="kyc-label">NIC Front</label>
+                <div class="upload-box">
+                    <input type="file" name="nic_front" class="form-control kyc-input" accept="image/*" required>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="kyc-label">NIC Back</label>
+                <div class="upload-box">
+                    <input type="file" name="nic_back" class="form-control kyc-input" accept="image/*" required>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="kyc-label">Selfie with NIC</label>
+                <div class="upload-box">
+                    <input type="file" name="selfie" class="form-control kyc-input" accept="image/*" required>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-warning w-100 mt-3 fw-bold" type="submit">
+            {% if is_edit %}🔁 Update & Resubmit{% else %}📤 Submit KYC{% endif %}
         </button>
     </form>
 </div>
+
 {% endblock %}
