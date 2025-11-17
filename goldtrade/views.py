@@ -870,8 +870,14 @@ def kyc_admin_reject(request, pk):
 @login_required
 def profile_view(request):
     profile = UserProfile.objects.get(user=request.user)
-    return render(request, "goldtrade/profile.html", {"profile": profile})
+    kyc = KYC.objects.filter(user=request.user).first()
+    wallet = Wallet.objects.get(user=request.user, is_demo=False)
 
+    return render(request, "goldtrade/profile.html", {
+        "profile": profile,
+        "kyc": kyc,
+        "wallet": wallet,
+    })
 
 # ============================
 # Upload / Change Picture
@@ -902,3 +908,23 @@ def profile_picture_remove(request):
         profile.profile_picture.delete(save=True)
         messages.success(request, "Profile picture removed.")
     return redirect("profile")
+
+# ============================
+# Update Profile
+# ============================
+@login_required
+def profile_update(request):
+    profile = UserProfile.objects.get(user=request.user)
+
+    if request.method == "POST":
+        form = ProfileUpdateForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully!")
+            return redirect("profile")
+    else:
+        form = ProfileUpdateForm(instance=profile)
+
+    return render(request, "goldtrade/profile_update.html", {"form": form})
+
+
