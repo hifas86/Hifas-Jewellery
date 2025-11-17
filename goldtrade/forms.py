@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 from .models import KYC
+from .models import UserProfile
 
 class CustomUserCreationForm(UserCreationForm):
     """Custom registration form with email field."""
@@ -32,3 +33,8 @@ class KYCForm(forms.ModelForm):
             "dob": forms.DateInput(attrs={'type': 'date'}),
             "address": forms.Textarea(attrs={'rows': 3}),
         }
+
+class ProfilePictureForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ["profile_picture"]
