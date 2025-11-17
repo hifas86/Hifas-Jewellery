@@ -1,8 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decimal import Decimal
-from .models import BankDeposit, Wallet
 from django.contrib.auth.models import User
+
+from .models import BankDeposit, Wallet
+from .models import UserProfile
 
 @receiver(post_save, sender=BankDeposit)
 def credit_wallet_on_approval(sender, instance, created, **kwargs):
@@ -37,3 +39,12 @@ def create_demo_wallet(sender, instance, created, **kwargs):
             is_demo=False,
             defaults={'cash_balance': Decimal('0.00')}
         )
+
+@receiver(post_save, sender=User)
+def create_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_profile(sender, instance, **kwargs):
+    instance.userprofile.save()
