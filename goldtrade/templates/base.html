@@ -242,8 +242,10 @@ body {
 </div>
 
 <a href="{% url 'logout' %}" class="ms-2 text-danger fw-bold">Logout</a>
-
-
+        
+<img src="{{ request.user.userprofile.picture_url }}"
+     class="rounded-circle"
+     style="width:40px;height:40px;object-fit:cover;border:2px solid gold;">
   
     </div>
 
