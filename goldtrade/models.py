@@ -126,3 +126,28 @@ class KYC(models.Model):
 
     def __str__(self):
         return f"KYC - {self.user.username}"
+
+# -------------------------
+# Profile
+# -------------------------
+def profile_upload_path(instance, filename):
+    return f"profile_pictures/{instance.user.id}/{filename}"
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(
+        upload_to=profile_upload_path,
+        null=True,
+        blank=True
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user.username
+
+    @property
+    def picture_url(self):
+        if self.profile_picture:
+            return self.profile_picture.url
+        return "/static/images/default_profile.png"   # fallback
+
