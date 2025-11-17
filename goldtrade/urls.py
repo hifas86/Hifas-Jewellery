@@ -16,6 +16,10 @@ urlpatterns = [
     path("profile/", views.profile_view, name="profile"),
     path("profile/upload/", views.profile_picture_upload, name="profile_picture_upload"),
     path("profile/remove/", views.profile_picture_remove, name="profile_picture_remove"),
+    path("profile/update/", views.profile_update, name="profile_update"),
+    path("profile/change-password/", views.change_password, name="change_password"),
+    path("profile/email-change/", views.email_change_request, name="email_change_request"),
+    path("profile/email-verify/", views.email_verify, name="email_verify_page"),
 
     # Authentication
     path('login/', views_auth.login_view, name='login'),
