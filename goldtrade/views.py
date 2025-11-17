@@ -18,7 +18,9 @@ from django.db import transaction as db_tx  # alias for clarity
 
 from .models import BankDeposit, GoldRate, Transaction, Wallet
 from .models import KYC
+from .models import UserProfile
 
+from .forms import ProfilePictureForm
 from .forms import KYCForm
 
 # =========================
@@ -861,3 +863,42 @@ def kyc_admin_reject(request, pk):
 
     messages.warning(request, "KYC rejected.")
     return redirect("kyc_admin_review", pk=pk)
+
+# ============================
+# User Profile Page
+# ============================
+@login_required
+def profile_view(request):
+    profile = UserProfile.objects.get(user=request.user)
+    return render(request, "goldtrade/profile.html", {"profile": profile})
+
+
+# ============================
+# Upload / Change Picture
+# ============================
+@login_required
+def profile_picture_upload(request):
+    profile = UserProfile.objects.get(user=request.user)
+
+    if request.method == "POST":
+        form = ProfilePictureForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile picture updated successfully!")
+            return redirect("profile")
+        else:
+            messages.error(request, "Invalid image. Try again.")
+
+    return redirect("profile")
+
+
+# ============================
+# Remove Profile Picture
+# ============================
+@login_required
+def profile_picture_remove(request):
+    profile = UserProfile.objects.get(user=request.user)
+    if profile.profile_picture:
+        profile.profile_picture.delete(save=True)
+        messages.success(request, "Profile picture removed.")
+    return redirect("profile")
