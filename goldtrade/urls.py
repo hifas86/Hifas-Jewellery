@@ -11,7 +11,12 @@ urlpatterns = [
     # KYC
     path("kyc/", views.kyc_form, name="kyc_form"),
     path("kyc/status/", views.kyc_status, name="kyc_status"),
-    
+
+    # Profile
+    path("profile/", views.profile_view, name="profile"),
+    path("profile/upload/", views.profile_picture_upload, name="profile_picture_upload"),
+    path("profile/remove/", views.profile_picture_remove, name="profile_picture_remove"),
+
     # Authentication
     path('login/', views_auth.login_view, name='login'),
     path('logout/', views_auth.logout_view, name='logout'),
