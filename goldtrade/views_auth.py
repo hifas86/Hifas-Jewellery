@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 
+import random
+
 # ------------------------------
 # LOGIN
 # ------------------------------
@@ -112,6 +114,70 @@ def reset_confirm(request):
 
     return render(request, "reset_confirm.html")
 
-
 def reset_success(request):
     return render(request, "reset_success.html")
+
+# ------------------------------
+# Change PASSWORD
+# ------------------------------
+@login_required
+def change_password(request):
+    if request.method == "POST":
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, "Password changed successfully!")
+            return redirect("profile")
+        else:
+            messages.error(request, "Please fix the errors.")
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, "goldtrade/change_password.html", {"form": form})
+
+# ------------------------------
+# Save OTP in Session
+# ------------------------------
+@login_required
+def email_change_request(request):
+    new_email = request.POST.get("new_email")
+
+    if User.objects.filter(email=new_email).exists():
+        messages.error(request, "Email already in use.")
+        return redirect("profile")
+
+    otp = random.randint(100000, 999999)
+    request.session["email_otp"] = otp
+    request.session["new_email"] = new_email
+
+    notify_user_email(
+        new_email,
+        "Email Verification Code – Hifas Jewellery",
+        f"<p>Your verification code is: <b>{otp}</b></p>"
+    )
+
+    messages.info(request, "Verification code sent. Enter OTP to confirm.")
+    return redirect("email_verify_page")
+
+# ------------------------------
+# Verify OTP & Update Email
+# ------------------------------
+@login_required
+def email_verify(request):
+    if request.method == "POST":
+        otp = request.POST.get("otp")
+
+        if str(otp) == str(request.session.get("email_otp")):
+            request.user.email = request.session.get("new_email")
+            request.user.save()
+
+            del request.session["email_otp"]
+            del request.session["new_email"]
+
+            messages.success(request, "Email updated successfully!")
+            return redirect("profile")
+
+        messages.error(request, "Invalid OTP.")
+        return redirect("email_verify_page")
+
+    return render(request, "goldtrade/email_verify.html")
