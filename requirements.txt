@@ -3,6 +3,7 @@ gunicorn==23.0.0
 dj-database-url==3.0.1
 psycopg2-binary==2.9.11
 whitenoise==6.11.0
+sendgrid==6.11.0
 
 # Utilities
 pillow==11.2.1
