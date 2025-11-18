@@ -7,6 +7,10 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 
+from goldtrade.models import Wallet
+
+from users.utils import send_verification_email
+
 import random
 
 # ------------------------------
@@ -38,7 +42,7 @@ def logout_view(request):
 
 
 # ------------------------------
-# REGISTER (NO EMAIL VERIFICATION)
+# REGISTER ((WITH EMAIL VERIFICATION)
 # ------------------------------
 def register_view(request):
     if request.method == "POST":
@@ -60,20 +64,22 @@ def register_view(request):
             messages.error(request, "Email already registered.")
             return redirect("register")
 
-        # --- CREATE USER (ACTIVE IMMEDIATELY) ---
+        # --- CREATE USER (INACTIVE until email verified) ---
+        # Note: Set is_active=False initially
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
-            is_active=True
+            is_active=False # <--- Key Change: User is inactive until verified
         )
 
         # --- AUTO-CREATE DEMO & REAL WALLETS ---
-        from goldtrade.models import Wallet
         Wallet.objects.get_or_create(user=user, is_demo=True, defaults={"cash_balance": 500000})
         Wallet.objects.get_or_create(user=user, is_demo=False)
 
-        messages.success(request, "Account created successfully! Please log in.")
+        send_verification_email(user)
+
+        messages.success(request, "Registration successful! Check your email to verify your account.")
         return redirect("login")
 
     return render(request, "register.html")
