@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.urls import path
-from . import views, views_auth
 from django.conf import settings
 from django.conf.urls.static import static
+
+from users.views_email import verify_email, resend_verification
+
+from . import views, views_auth
 
 urlpatterns = [
     # Live notifications
@@ -26,6 +29,10 @@ urlpatterns = [
     path('logout/', views_auth.logout_view, name='logout'),
     path('register/', views_auth.register_view, name='register'),
     path('forgot-password/', views_auth.forgot_password, name='forgot_password'),
+
+    # Email verification
+    path("verify-email/<uuid:token>/", verify_email, name="verify_email"),
+    path("resend-verification/", resend_verification, name="resend_verification"),
 
     # Dashboard
     path('', views.dashboard, name='dashboard'),
