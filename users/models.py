@@ -65,3 +65,13 @@ class UserProfile(models.Model):
         if self.profile_picture:
             return self.profile_picture.url
         return "/static/images/default_profile.png"
+
+# ------------------------------------------------
+#  🔄 Auto-create UserProfile for new users
+# ------------------------------------------------
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+    else:
+        instance.userprofile.save()
