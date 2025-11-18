@@ -1,28 +1,58 @@
 {% extends "base.html" %}
+{% block title %}KYC Status – Hifas Jewellery{% endblock %}
+
 {% block content %}
 
-<h3 class="text-warning fw-bold">🛡️ KYC Status</h3>
+<h3 class="text-warning fw-bold mb-4">🛡️ Your KYC Status</h3>
 
 {% if kyc %}
     <div class="card p-4" style="background:#111827; border:1px solid #d4af37;">
-        <p><b>Status:</b> 
+
+        <p><b>Status:</b>
             {% if kyc.status == "approved" %}
-                <span class="badge bg-success">Approved</span>
+                <span class="badge bg-success">Approved ✔</span>
+
             {% elif kyc.status == "pending" %}
-                <span class="badge bg-warning text-dark">Pending</span>
+                <span class="badge bg-warning text-dark">Pending ⏳</span>
+
             {% else %}
-                <span class="badge bg-danger">Rejected</span>
+                <span class="badge bg-danger">Rejected ❌</span>
             {% endif %}
         </p>
 
         {% if kyc.status == "rejected" %}
-            <p class="text-danger"><b>Reason:</b> {{ kyc.rejection_reason }}</p>
-            <a href="{% url 'kyc_submit' %}" class="btn btn-warning">Resubmit KYC</a>
+            <div class="alert alert-danger mt-3">
+                <b>Reason:</b>
+                {% if kyc.rejection_reason %}
+                    {{ kyc.rejection_reason }}
+                {% else %}
+                    No reason provided.
+                {% endif %}
+            </div>
+
+            <a href="{% url 'kyc_submit' %}" class="btn btn-warning fw-bold">
+                🔁 Resubmit KYC
+            </a>
         {% endif %}
+
+        <hr class="my-3" style="border:1px solid gold">
+
+        <a href="{% url 'kyc_submit' %}" class="btn btn-info w-100 fw-bold">
+            📄 View / Update Submitted KYC
+        </a>
+
     </div>
+
 {% else %}
-    <p>You have not submitted KYC yet.</p>
-    <a href="{% url 'kyc_submit' %}" class="btn btn-warning">Submit KYC</a>
+
+    <div class="alert alert-warning">
+        📝 You have not submitted KYC yet.
+    </div>
+
+    <a href="{% url 'kyc_submit' %}" class="btn btn-warning fw-bold">
+        📤 Submit KYC
+    </a>
+
 {% endif %}
 
 {% endblock %}
