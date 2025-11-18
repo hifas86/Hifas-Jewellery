@@ -58,4 +58,11 @@ fetch("{% url 'gold_history' %}")
 });
 </script>
 
+{% if not request.user.userprofile.email_verified %}
+<div class="alert alert-warning text-dark fw-bold">
+    📧 Your email is not verified.  
+    <a href="{% url 'resend_verification' %}" class="btn btn-sm btn-primary">Resend Verification Email</a>
+</div>
+{% endif %}
+
 {% endblock %}
