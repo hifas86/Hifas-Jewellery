@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% block title %}KYC Pending – Admin{% endblock %}
+
 {% block content %}
 
 <h3 class="text-warning fw-bold mb-4">🛡️ KYC Pending Approvals</h3>
-
-<table class="table table-dark table-bordered">
+<table class="table table-dark table-bordered table-striped">
     <thead>
         <tr>
             <th>User</th>
@@ -21,15 +22,28 @@
             <td>{{ k.user.username }}</td>
             <td>{{ k.nic_number }}</td>
             <td>{{ k.phone }}</td>
-            <td>{{ k.status }}</td>
-            <td>{{ k.created_at }}</td>
+
             <td>
-                <a href="{% url 'kyc_admin_review' k.id %}" class="btn btn-warning btn-sm">Review</a>
+                {% if k.status == "pending" %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% elif k.status == "approved" %}
+                    <span class="badge bg-success">Approved</span>
+                {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+
+            <td>{{ k.submitted_at|date:"Y-m-d H:i" }}</td>
+
+            <td>
+                <a href="{% url 'kyc_admin_review' k.id %}" class="btn btn-warning btn-sm">
+                    Review
+                </a>
             </td>
         </tr>
         {% empty %}
         <tr>
-            <td colspan="6" class="text-center">No pending KYC</td>
+            <td colspan="6" class="text-center text-muted">No pending KYC</td>
         </tr>
         {% endfor %}
     </tbody>
