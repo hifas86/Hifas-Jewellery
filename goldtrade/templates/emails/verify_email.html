@@ -1,0 +1,28 @@
+<div style="font-family:Arial;padding:20px;background:#f5f5f5;">
+  <div style="max-width:600px;margin:auto;background:white;border-radius:8px;padding:20px;">
+    <h2 style="color:#d4af37;">Hifas Jewellery – Verify Your Email</h2>
+
+    <p>Hello {{ user.username }},</p>
+
+    <p>Thank you for registering at <b>Hifas Jewellery Digital Gold</b>.</p>
+
+    <p>Please click the button below to verify your email:</p>
+
+    <p style="text-align:center;">
+      <a href="{{ url }}" style="
+          background:#d4af37;
+          color:white;
+          padding:12px 20px;
+          border-radius:6px;
+          text-decoration:none;
+          font-size:16px;
+      ">Verify Email</a>
+    </p>
+
+    <p>If the button doesn't work, copy this link:</p>
+    <p>{{ url }}</p>
+
+    <br>
+    <p>Regards,<br>Hifas Jewellery Team</p>
+  </div>
+</div>
