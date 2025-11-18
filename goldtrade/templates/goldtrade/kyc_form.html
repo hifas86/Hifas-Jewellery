@@ -75,20 +75,20 @@
             <div class="col-md-6">
                 <label class="kyc-label">NIC Number</label>
                 <input type="text" name="nic_number" class="form-control kyc-input"
-                       value="{{ form.nic_number.value|default:'' }}" required>
+                       value="{{ kyc.nic_number }}" required>
             </div>
 
             <div class="col-md-6">
                 <label class="kyc-label">Date of Birth</label>
                 <input type="date" name="dob" class="form-control kyc-input"
-                       value="{{ form.dob.value|default:'' }}" required>
+                       value="{{ kyc.dob }}" required>
             </div>
         </div>
 
         <div class="mb-3">
             <label class="kyc-label">Phone Number</label>
             <input type="text" name="phone" class="form-control kyc-input"
-                   value="{{ form.phone.value|default:'' }}" required>
+                   value="{{ kyc.phone }}" required>
         </div>
 
         <hr class="my-4" style="border:1px solid #d4af37">
