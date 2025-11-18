@@ -142,26 +142,19 @@ TEMPLATES = [
     },
 ]
 
-# ============================================================
-# SENDGRID EMAIL SETTINGS
-# ============================================================
+# ============================
+# EMAIL (SendGrid)
+# ============================
 
 EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
 
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False   # True = emails not delivered
+SENDGRID_ECHO_TO_STDOUT = True
 
-# Optional but recommended
-SENDGRID_SANDBOX_MODE_IN_DEBUG = False
-SENDGRID_ECHO_TO_STDOUT = False
-
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL",
-    "Hifas Jewellery <no-reply@hifasjewellery.com>"
-)
-
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
-
-EMAIL_VERIFICATION_ENABLED = True
+# Must be a valid email identity (verified via SendGrid)
+DEFAULT_FROM_EMAIL = "Hifas Jewellery <no-reply@hifasjewellery.com>"
+SERVER_EMAIL = "Hifas Jewellery <no-reply@hifasjewellery.com>"
 
 # ============================================================
 # LOGGING
