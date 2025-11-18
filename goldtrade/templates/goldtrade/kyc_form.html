@@ -50,7 +50,16 @@
     background: #1a2337;
     transform: scale(1.03);
 }
+
+.preview-img {
+    max-width: 90px; 
+    border-radius: 10px;
+    margin-top: 8px;
+    box-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
 </style>
+
+
 
 <div class="kyc-card">
     <h3 class="mb-4">🛡️ KYC Verification</h3>
@@ -68,56 +77,115 @@
         </div>
     {% endif %}
 
+
+    <!-- Show Validation Errors -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+
     <form action="" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
 
         <div class="row mb-3">
             <div class="col-md-6">
                 <label class="kyc-label">NIC Number</label>
-                <input type="text" name="nic_number" class="form-control kyc-input"
-                       value="{{ kyc.nic_number }}" required>
+                <input type="text"
+                       name="nic_number"
+                       class="form-control kyc-input"
+                       value="{% if kyc %}{{ kyc.nic_number }}{% endif %}"
+                       required>
             </div>
 
             <div class="col-md-6">
                 <label class="kyc-label">Date of Birth</label>
-                <input type="date" name="dob" class="form-control kyc-input"
-                       value="{{ kyc.dob }}" required>
+                <input type="date"
+                       name="dob"
+                       class="form-control kyc-input"
+                       value="{% if kyc %}{{ kyc.dob|date:'Y-m-d' }}{% endif %}"
+                       required>
             </div>
         </div>
 
         <div class="mb-3">
             <label class="kyc-label">Phone Number</label>
-            <input type="text" name="phone" class="form-control kyc-input"
-                   value="{{ kyc.phone }}" required>
+            <input type="text"
+                   name="phone"
+                   class="form-control kyc-input"
+                   value="{% if kyc %}{{ kyc.phone }}{% endif %}"
+                   required>
         </div>
 
         <hr class="my-4" style="border:1px solid #d4af37">
 
+
+
+        <!-- FILE UPLOADS -->
         <div class="row">
+
+            <!-- NIC FRONT -->
             <div class="col-md-4 mb-3">
                 <label class="kyc-label">NIC Front</label>
-                <div class="upload-box">
-                    <input type="file" name="nic_front" class="form-control kyc-input" accept="image/*" required>
+
+                {% if kyc and kyc.nic_front %}
+                    <img src="{{ kyc.nic_front.url }}" class="preview-img">
+                    <small class="d-block text-light">Upload new to replace</small>
+                {% endif %}
+
+                <div class="upload-box mt-2">
+                    <input type="file"
+                           name="nic_front"
+                           class="form-control kyc-input"
+                           accept="image/*"
+                           {% if not kyc %}required{% endif %}>
                 </div>
             </div>
 
+
+            <!-- NIC BACK -->
             <div class="col-md-4 mb-3">
                 <label class="kyc-label">NIC Back</label>
-                <div class="upload-box">
-                    <input type="file" name="nic_back" class="form-control kyc-input" accept="image/*" required>
+
+                {% if kyc and kyc.nic_back %}
+                    <img src="{{ kyc.nic_back.url }}" class="preview-img">
+                    <small class="d-block text-light">Upload new to replace</small>
+                {% endif %}
+
+                <div class="upload-box mt-2">
+                    <input type="file"
+                           name="nic_back"
+                           class="form-control kyc-input"
+                           accept="image/*"
+                           {% if not kyc %}required{% endif %}>
                 </div>
             </div>
 
+
+            <!-- SELFIE -->
             <div class="col-md-4 mb-3">
                 <label class="kyc-label">Selfie with NIC</label>
-                <div class="upload-box">
-                    <input type="file" name="selfie" class="form-control kyc-input" accept="image/*" required>
+
+                {% if kyc and kyc.selfie %}
+                    <img src="{{ kyc.selfie.url }}" class="preview-img">
+                    <small class="d-block text-light">Upload new to replace</small>
+                {% endif %}
+
+                <div class="upload-box mt-2">
+                    <input type="file"
+                           name="selfie"
+                           class="form-control kyc-input"
+                           accept="image/*"
+                           {% if not kyc %}required{% endif %}>
                 </div>
             </div>
+
         </div>
 
+
         <button class="btn btn-warning w-100 mt-3 fw-bold" type="submit">
-            {% if is_edit %}🔁 Update & Resubmit{% else %}📤 Submit KYC{% endif %}
+            {% if kyc %}🔁 Update & Resubmit{% else %}📤 Submit KYC{% endif %}
         </button>
     </form>
 </div>
