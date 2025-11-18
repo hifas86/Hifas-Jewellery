@@ -177,6 +177,7 @@ class KYC(models.Model):
         ],
         default="pending"
     )
+    rejection_reason = models.TextField(blank=True, null=True)
 
     submitted_at = models.DateTimeField(auto_now_add=True)
 
