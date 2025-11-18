@@ -8,9 +8,9 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
 
 from goldtrade.models import Wallet
-from goldtrade.views import notify_user_email   # <-- FIXED
 from users.utils import send_verification_email
 
 import random
@@ -167,10 +167,12 @@ def email_change_request(request):
     request.session["email_otp"] = otp
     request.session["new_email"] = new_email
 
-    notify_user_email(
-        new_email,
-        "Email Verification Code – Hifas Jewellery",
-        f"<p>Your verification code is: <b>{otp}</b></p>"
+    send_mail(
+        subject="Email Verification Code – Hifas Jewellery",
+        message=f"Your verification code is: {otp}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[new_email],
+        fail_silently=True,
     )
 
     messages.info(request, "Verification code sent. Enter OTP to confirm.")
