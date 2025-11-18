@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% block title %}Review KYC – {{ kyc.user.username }}{% endblock %}
+
 {% block content %}
 
 <style>
@@ -8,36 +10,102 @@
     border-radius: 10px;
     margin-bottom: 15px;
 }
+.info-box {
+    background: #0d1320;
+    border: 1px solid #d4af37;
+    padding: 15px;
+    border-radius: 10px;
+}
 </style>
 
 <h3 class="text-warning fw-bold mb-4">🔍 KYC Review – {{ kyc.user.username }}</h3>
 
+<a href="{% url 'kyc_admin_list' %}" class="btn btn-secondary btn-sm mb-3">← Back to list</a>
+
 <div class="row">
     <div class="col-md-4">
         <h5 class="text-info">NIC Front</h5>
-        <img src="{{ kyc.nic_front.url }}" class="kyc-img">
+        {% if kyc.nic_front %}
+            <img src="{{ kyc.nic_front.url }}" class="kyc-img">
+        {% else %}
+            <p class="text-danger">Not uploaded</p>
+        {% endif %}
     </div>
 
     <div class="col-md-4">
         <h5 class="text-info">NIC Back</h5>
-        <img src="{{ kyc.nic_back.url }}" class="kyc-img">
+        {% if kyc.nic_back %}
+            <img src="{{ kyc.nic_back.url }}" class="kyc-img">
+        {% else %}
+            <p class="text-danger">Not uploaded</p>
+        {% endif %}
     </div>
 
     <div class="col-md-4">
-        <h5 class="text-info">Selfie</h5>
-        <img src="{{ kyc.selfie.url }}" class="kyc-img">
+        <h5 class="text-info">Selfie with NIC</h5>
+        {% if kyc.selfie %}
+            <img src="{{ kyc.selfie.url }}" class="kyc-img">
+        {% else %}
+            <p class="text-danger">Not uploaded</p>
+        {% endif %}
     </div>
 </div>
 
 <hr style="border:1px solid gold">
 
-<p><b>NIC Number:</b> {{ kyc.nic_number }}</p>
-<p><b>DOB:</b> {{ kyc.dob }}</p>
-<p><b>Phone:</b> {{ kyc.phone }}</p>
+<div class="info-box">
+    <table class="table table-dark table-bordered mb-0">
+        <tr>
+            <th style="width:200px">User</th>
+            <td>{{ kyc.user.username }}</td>
+        </tr>
+        <tr>
+            <th full_name>Full Name</th>
+            <td>{{ kyc.full_name }}</td>
+        </tr>
+        <tr>
+            <th>NIC Number</th>
+            <td>{{ kyc.nic_number }}</td>
+        </tr>
+        <tr>
+            <th>Date of Birth</th>
+            <td>{{ kyc.dob }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ kyc.phone }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>{{ kyc.address }}</td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>
+                {% if kyc.status == "pending" %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% elif kyc.status == "approved" %}
+                    <span class="badge bg-success">Approved</span>
+                {% else %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Submitted At</th>
+            <td>{{ kyc.submitted_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+    </table>
+</div>
 
 <div class="d-flex gap-2 mt-4">
-    <a href="{% url 'kyc_admin_approve' kyc.id %}" class="btn btn-success fw-bold w-50">✔ Approve</a>
-    <a href="{% url 'kyc_admin_reject' kyc.id %}" class="btn btn-danger fw-bold w-50">❌ Reject</a>
+    <a href="{% url 'kyc_admin_approve' kyc.id %}" class="btn btn-success fw-bold w-50">
+        ✔ Approve
+    </a>
+
+    <a href="{% url 'kyc_admin_reject' kyc.id %}" class="btn btn-danger fw-bold w-50">
+        ❌ Reject
+    </a>
 </div>
 
 {% endblock %}
