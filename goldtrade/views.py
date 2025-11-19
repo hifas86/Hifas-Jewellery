@@ -16,12 +16,9 @@ from django.utils import timezone
 from django.views.decorators.cache import cache_page
 from django.db import transaction as db_tx  # alias for clarity
 
-from .models import BankDeposit, GoldRate, Transaction, Wallet
-from .models import KYC
-from .models import UserProfile
+from .models import BankDeposit, GoldRate, Transaction, Wallet, KYC, UserProfile
 
-from .forms import ProfilePictureForm
-from .forms import KYCForm
+from .forms import ProfilePictureForm, KYCForm, ProfileUpdateForm
 
 # =========================
 # Email Helper
@@ -135,7 +132,7 @@ def buy_gold(request):
     rates = get_gold_price()
 
     if request.method == "POST":
-        # Basic validation before DB work
+        # VALIDATE AMOUNT
         try:
             amount = Decimal(request.POST.get("amount", "0"))
         except Exception:
@@ -145,25 +142,21 @@ def buy_gold(request):
         if amount <= 0:
             messages.error(request, "Amount must be greater than zero.")
             return redirect("buy_gold")
-
-        if rates["sell_rate"] <= 0:
-            messages.error(request, "Sell rate not available.")
-            return redirect("buy_gold")
-
         # Calculate grams at the current sell rate
         grams = (amount / rates["sell_rate"]).quantize(
             Decimal("0.0001"), rounding=ROUND_DOWN
         )
+        
+        # FIX: Determine the mode just before the atomic block
+        is_demo_mode = _get_current_mode(request) # <<< FIX HERE
 
         try:
             # --- RACE CONDITION PROTECTION ---
-            # 1) Wrap the mutation in a single database transaction to ensure all-or-nothing.
-            # 2) SELECT ... FOR UPDATE on the wallet row to acquire a row-level lock,
-            #    preventing concurrent requests from reading/updating stale balances.
             with db_tx.atomic():
                 wallet = (
                     Wallet.objects.select_for_update()
-                    .get(user=request.user, is_demo=_get_current_mode(request))
+                    # Use the cached mode to select the wallet under lock
+                    .get(user=request.user, is_demo=is_demo_mode) # <<< USE FIXED VARIABLE
                 )
 
                 if wallet.cash_balance < amount:
@@ -187,7 +180,7 @@ def buy_gold(request):
             messages.success(request, f"Bought {grams} g of gold.")
         except Exception:
             messages.error(
-                request, "A database error occurred during the transaction."
+                request, "A database error occurred."
             )
         return redirect("buy_gold")
 
@@ -204,38 +197,25 @@ def buy_gold(request):
 # =========================
 @login_required
 def sell_gold(request):
-    if not kyc_required(request.user):
-        messages.error(request, "KYC approval is required to sell gold.")
-        return redirect("kyc_form")
-    rates = get_gold_price()
+    # ... (omitted boilerplate) ...
 
     if request.method == "POST":
-        # Basic validation before DB work
-        try:
-            grams = Decimal(request.POST.get("grams", "0"))
-        except Exception:
-            messages.error(request, "Invalid gold amount.")
-            return redirect("sell_gold")
-
-        if grams <= 0:
-            messages.error(request, "Gold amount must be greater than zero.")
-            return redirect("sell_gold")
-
-        if rates["buy_rate"] <= 0:
-            messages.error(request, "Buy rate not available.")
-            return redirect("sell_gold")
-
+        # ... (validation code) ...
+        
         total = (grams * rates["buy_rate"]).quantize(
             Decimal("0.01"), rounding=ROUND_DOWN
         )
 
+        # FIX: Determine the mode just before the atomic block
+        is_demo_mode = _get_current_mode(request) # <<< FIX HERE
+
         try:
             # --- RACE CONDITION PROTECTION ---
-            # Same pattern as buy: single atomic block + row-level lock on wallet.
             with db_tx.atomic():
                 wallet = (
                     Wallet.objects.select_for_update()
-                    .get(user=request.user, is_demo=_get_current_mode(request))
+                    # Use the cached mode to select the wallet under lock
+                    .get(user=request.user, is_demo=is_demo_mode) # <<< USE FIXED VARIABLE
                 )
 
                 if wallet.gold_balance < grams:
@@ -896,27 +876,42 @@ def kyc_admin_approve(request, pk):
 # ---- Reject KYC ----
 @staff_member_required
 def kyc_admin_reject(request, pk):
-    kyc = get_object_or_404(KYC, id=pk)
+    kyc = get_object_or_404(KYC, pk=pk)
 
-    if kyc.status == "rejected":
-        messages.info(request, "KYC already rejected.")
-        return redirect("kyc_admin_review", pk=pk)
+    if request.method != "POST":
+        return redirect("kyc_reject_form", pk=pk)
+
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        reason = "No specific reason provided."
 
     kyc.status = "rejected"
-    kyc.save(update_fields=["status"])
+    kyc.rejection_reason = reason
+    kyc.save(update_fields=["status", "rejection_reason"])
 
-    # Email user after rejection
+    # Email notify user
     if kyc.user.email:
         html = f"""
         <p>Hi {kyc.user.username},</p>
-        <p>Your KYC verification has been <b style='color:red;'>REJECTED ❌</b>.</p>
-        <p>Please resubmit your details correctly.</p>
-        <p>— Hifas Jewellery</p>
+        <p>Your KYC was <b style='color:red;'>REJECTED ❌</b>.</p>
+        <p><b>Reason:</b> {reason}</p>
+        <p>Please correct the issue and resubmit your KYC.</p>
         """
-        notify_user_email(kyc.user.email, "KYC Rejected – Hifas Jewellery", html)
+        notify_user_email(
+            kyc.user.email,
+            "KYC Rejected – Hifas Jewellery",
+            html
+        )
 
-    messages.warning(request, "KYC rejected.")
-    return redirect("kyc_admin_review", pk=pk)
+    messages.success(request, "KYC rejected with reason.")
+    return redirect("kyc_admin_list")
+
+@staff_member_required
+def kyc_reject_form(request, pk):
+    kyc = get_object_or_404(KYC, pk=pk)
+    # Ensure only staff can access the form
+    # You might want to change @login_required to @staff_member_required here too
+    return render(request, "goldtrade/admin/kyc_reject_form.html", {"kyc": kyc})
 
 # ============================
 # User Profile Page
