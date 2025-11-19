@@ -71,10 +71,18 @@ urlpatterns = [
     path("staff/kyc/", views.kyc_admin_list, name="kyc_admin_list"),
     path("staff/kyc/<int:pk>/review/", views.kyc_admin_review, name="kyc_admin_review"),
     path("staff/kyc/<int:pk>/approve/", views.kyc_admin_approve, name="kyc_admin_approve"),
-    path("staff/kyc/<int:pk>/reject/", views.kyc_admin_reject, name="kyc_admin_reject"),
+
+    # Reject form (admin input page)
+    path("staff/kyc/<int:pk>/reject-form/", views.kyc_reject_form, name="kyc_reject_form"),
+
+    # Reject submit action
+    path("staff/kyc/<int:pk>/reject/submit/", views.kyc_admin_reject, name="kyc_admin_reject"),
+    
+
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
