@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Reject KYC – {{ kyc.user.username }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .kyc-box {
+        background: #0f172a; /* deep navy */
+        border: 1px solid #d4af37; 
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+    }
+    .kyc-title {
+        color: gold;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .form-label {
+        color: #ffdf88;
+        font-weight: 600;
+    }
+    textarea {
+        background: #0d1323 !important;
+        color: white !important;
+        border: 1px solid #d4af37 !important;
+    }
+    textarea:focus {
+        box-shadow: 0 0 8px gold;
+        border-color: gold !important;
+    }
+    .btn-gold {
+        background: gold;
+        color: black;
+        font-weight: bold;
+        border-radius: 8px;
+    }
+    .btn-gold:hover {
+        background: #e6c200;
+        color: #000;
+    }
+    .btn-cancel {
+        background: #374151;
+        color: white;
+        font-weight: 500;
+        border-radius: 8px;
+    }
+    .btn-cancel:hover {
+        background: #4b5563;
+    }
+    .kyc-info-box {
+        background: #1e293b;
+        border-left: 4px solid gold;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        color: #ffe9a1;
+    }
+</style>
+
+
+<div class="kyc-box">
+
+    <h3 class="kyc-title mb-4">❌ Reject KYC – {{ kyc.user.username }}</h3>
+
+    <div class="kyc-info-box">
+        <p class="mb-1"><b>Full Name:</b> {{ kyc.full_name }}</p>
+        <p class="mb-1"><b>NIC Number:</b> {{ kyc.nic_number }}</p>
+        <p class="mb-1"><b>Date of Birth:</b> {{ kyc.dob }}</p>
+        <p class="mb-1"><b>Phone:</b> {{ kyc.phone }}</p>
+    </div>
+
+    <form method="POST" action="{% url 'kyc_admin_reject' kyc.id %}">
+        {% csrf_token %}
+
+        <label class="form-label">Reason for Rejection</label>
+        <textarea name="reason" rows="4" class="form-control mb-4" placeholder="Explain why this KYC is rejected..." required></textarea>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-gold w-50" type="submit">Submit Rejection</button>
+            <a href="{% url 'kyc_admin_review' kyc.id %}" class="btn btn-cancel w-50">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
