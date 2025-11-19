@@ -84,13 +84,20 @@ body {
    SIDEBAR
 ---------------------------------------------*/
 .sidebar {
-    height: 200vh;
-    background: linear-gradient(180deg, #f8d879, #f0c14b);
-    padding-top: 20px;
-    min-width: 230px;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+    /* OLD: height: 200vh; */
+    height: 100vh; /* Set to viewport height */
+    position: sticky; /* Keep it fixed when content scrolls */
+    top: 0; /* Align it to the top */
+    background: linear-gradient(180deg, #f8d879, #f0c14b);
+    padding-top: 20px;
+    min-width: 230px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+    /* Add overflow-y if sidebar content exceeds 100vh */
+    overflow-y: auto; 
 }
-
+/* IMPORTANT: The parent div, .d-flex, must be set to fill the viewport height if you remove the navbar. 
+   Since the navbar exists, using 'sticky' is the simplest solution. */
+    
 .sidebar a {
     display: flex;
     align-items: center;
@@ -203,19 +210,21 @@ body {
             </ul>
         </div>
 
-        <span class="gold-user ms-2">👑 {{ request.user.username|title }}</span>
-
         <!-- Notification Bell -->
-        <div class="position-relative me-3">
+        <div class="position-relative me-3" id="notif-container">
             <span id="notif-bell" style="font-size:25px; cursor:pointer;">🔔</span>
             <span id="notif-badge" class="badge bg-danger position-absolute top-0 start-100 translate-middle"
                   style="display:none;border-radius:50%;padding:5px 8px;"></span>
         </div>
 
-        <a href="{% url 'logout' %}" class="text-danger fw-bold">Logout</a>
+        <a href="{% url 'profile_view' %}" class="d-flex align-items-center text-decoration-none gold-user ms-2">
+                 <span class="text-white me-2">👑 {{ request.user.username|title }}</span>
 
-        <img src="{{ request.user.userprofile.picture_url }}"
-             class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid gold;">
+                 <img src="{{ request.user.userprofile.picture_url }}"
+                      class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid gold;">
+            </a>
+
+            <a href="{% url 'logout' %}" class="text-danger fw-bold">Logout</a>
     </div>
 </div>
 {% endif %}
@@ -232,7 +241,7 @@ body {
     <a href="{% url 'my_deposits' %}" class="{% if request.resolver_match.url_name == 'my_deposits' %}active{% endif %}">🏦 My Deposits</a>
     <a href="{% url 'withdraw_money' %}" class="{% if request.resolver_match.url_name == 'withdraw_money' %}active{% endif %}">💳 Withdraw Money</a>
     <a href="{% url 'my_withdrawals' %}" class="{% if request.resolver_match.url_name == 'my_withdrawals' %}active{% endif %}">🧾 My Withdrawals</a>
-    <a href="{% url 'kyc_form' %}" class="{% if request.resolver_match.url_name == 'kyc_form' %}active{% endif %}">📝 KYC Verification</a>
+    <a href="{% url 'kyc_form' %}" class="{% if request.resolver_match.url_name == 'kyc_form' %}active{% endif %}">📝 KYC Form</a>
 
     {% if request.user.is_staff %}
     <a href="{% url 'update_rate' %}" class="{% if request.resolver_match.url_name == 'update_rate' %}active{% endif %}">⚙️ Update Rate</a>
@@ -305,6 +314,7 @@ function checkNotifications() {
             let total = data.deposits + data.withdrawals;
             const bell = document.getElementById("notif-bell");
             const badge = document.getElementById("notif-badge");
+            const notifContainer = document.getElementById("notif-container"); 
 
             if (total > 0) {
                 badge.style.display = "inline-block";
@@ -315,8 +325,17 @@ function checkNotifications() {
                     setTimeout(() => bell.classList.remove("bell-alert"), 600);
                     playNotifSound();
                 }
+                // 🌟 SET THE STAFF LINK
+                {% if request.user.is_staff %}
+                // Prioritize Deposits if both are pending
+               let targetUrl = data.deposits > 0 ? "{% url 'staff_deposits' %}" : "{% url 'staff_withdrawals' %}";
+               notifContainer.onclick = () => window.location.href = targetUrl;
+               {% endif %}
             } else {
                 badge.style.display = "none";
+                {% if request.user.is_staff %}
+                notifContainer.onclick = null; // Remove link when no notifications
+                {% endif %}
             }
             lastTotal = total;
         });
