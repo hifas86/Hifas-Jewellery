@@ -217,7 +217,7 @@ body {
                   style="display:none;border-radius:50%;padding:5px 8px;"></span>
         </div>
 
-        <a href="{% url 'profile_view' %}" class="d-flex align-items-center text-decoration-none gold-user ms-2">
+        <a href="{% url 'profile' %}" class="d-flex align-items-center text-decoration-none gold-user ms-2">
                  <span class="text-white me-2">👑 {{ request.user.username|title }}</span>
 
                  <img src="{{ request.user.userprofile.picture_url }}"
