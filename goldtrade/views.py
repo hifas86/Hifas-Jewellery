@@ -918,7 +918,7 @@ def kyc_reject_form(request, pk):
 # ============================
 @login_required
 def profile_view(request):
-    profile = UserProfile.objects.get(user=request.user)
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
     kyc = KYC.objects.filter(user=request.user).first()
     wallet = Wallet.objects.get(user=request.user, is_demo=False)
 
