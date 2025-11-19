@@ -5,10 +5,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Digital Gold Trade - Hifas Jewellery{% endblock %}</title>
+
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- SweetAlert Animation Styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+
 <style>
-/* ✅ NAVBAR */
+/* --------------------------------------------
+   GLOBAL BACKGROUND + LUXURY EFFECTS
+---------------------------------------------*/
+body {
+    background: radial-gradient(circle at top, #1a2337, #0b0f1c);
+    color: white;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ✨ Soft moving gold shine */
+.gold-shimmer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,215,0,0.08) 0%, rgba(0,0,0,0) 70%);
+    animation: shimmerMove 18s infinite linear;
+    z-index: -1;
+}
+@keyframes shimmerMove {
+    0% { transform: translate(-20%, -20%) rotate(0deg); }
+    50% { transform: translate(20%, 20%) rotate(180deg); }
+    100% { transform: translate(-20%, -20%) rotate(360deg); }
+}
+
+/* Floating particles */
+.gold-dots {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+    background:
+        radial-gradient(circle 2px, rgba(255,215,0,.2) 40%, transparent 41%) 10% 20%,
+        radial-gradient(circle 2px, rgba(255,215,0,.25) 40%, transparent 41%) 50% 80%,
+        radial-gradient(circle 2px, rgba(255,215,0,.15) 40%, transparent 41%) 90% 30%,
+        radial-gradient(circle 3px, rgba(255,215,0,.3) 40%, transparent 41%) 30% 50%;
+    background-size: 150px 150px;
+    animation: dotsFloat 10s infinite alternate ease-in-out;
+}
+@keyframes dotsFloat {
+    0% { transform: translateY(0) }
+    100% { transform: translateY(-13px) }
+}
+
+/* --------------------------------------------
+   NAVBAR
+---------------------------------------------*/
 .gold-navbar {
     background: linear-gradient(90deg, #f0c14b, #e2b027);
     color: #4a3809;
@@ -18,7 +71,18 @@
     box-shadow: 0 2px 10px rgba(193,157,43,0.25);
 }
 
-/* ✅ SIDEBAR */
+/* Gold Ticker Animation */
+#gold-ticker {
+    animation: goldGlow 2s infinite alternate;
+}
+@keyframes goldGlow {
+    0% { box-shadow: 0 0 4px rgba(255,215,0,0.4); }
+    100% { box-shadow: 0 0 12px rgba(255,195,0,0.9); }
+}
+
+/* --------------------------------------------
+   SIDEBAR
+---------------------------------------------*/
 .sidebar {
     height: 200vh;
     background: linear-gradient(180deg, #f8d879, #f0c14b);
@@ -45,67 +109,9 @@
     transform: translateX(4px);
 }
 
-/* ✅ PAGE BACKGROUND */
-body {
-    background: #0d1323;
-    color: white;
-}
-
-/* ✅ GOLD GLOW */
-#gold-ticker {
-    animation: goldGlow 2s infinite alternate;
-}
-@keyframes goldGlow {
-    0% { box-shadow: 0 0 4px rgba(255,215,0,0.4); }
-    100% { box-shadow: 0 0 12px rgba(255,195,0,0.9); }
-}
-
-/* 🌟 Premium Animated Luxury Background */
-body {
-    background: radial-gradient(circle at top, #1a2337, #0b0f1c);
-    color: white;
-    overflow-x: hidden;
-    position: relative;
-}
-
-/* ✨ Soft moving gold shine */
-.gold-shimmer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,215,0,0.08) 0%, rgba(0,0,0,0) 70%);
-    animation: shimmerMove 18s infinite linear;
-    z-index: -1;
-}
-
-@keyframes shimmerMove {
-    0% { transform: translate(-20%, -20%) rotate(0deg); }
-    50% { transform: translate(20%, 20%) rotate(180deg); }
-    100% { transform: translate(-20%, -20%) rotate(360deg); }
-}
-
-/* Subtle floating particles 💫 */
-.gold-dots {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -2;
-    background:
-        radial-gradient(circle 2px, rgba(255,215,0,.2) 40%, transparent 41%) 10% 20%,
-        radial-gradient(circle 2px, rgba(255,215,0,.25) 40%, transparent 41%) 50% 80%,
-        radial-gradient(circle 2px, rgba(255,215,0,.15) 40%, transparent 41%) 90% 30%,
-        radial-gradient(circle 3px, rgba(255,215,0,.3) 40%, transparent 41%) 30% 50%;
-    background-size: 150px 150px;
-    animation: dotsFloat 10s infinite alternate ease-in-out;
-}
-
-@keyframes dotsFloat {
-    0% { transform: translateY(0) }
-    100% { transform: translateY(-13px) }
-}
-
+/* --------------------------------------------
+   WALLET SWITCH BUTTON
+---------------------------------------------*/
 .wallet-switch-btn {
     background: #1a2333;
     border: 1px solid #d4af37;
@@ -116,23 +122,22 @@ body {
     border-radius: 6px;
     transition: .25s;
 }
-
 .wallet-switch-btn:hover {
     background: #2b3550;
     box-shadow: 0 0 8px rgba(212,175,55,0.6);
 }
-.badge {
-    animation: fadeIn .3s ease-in-out;
-}
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(.8);}
-    to { opacity: 1; transform: scale(1);}
+/* Notifications Bell */
+@keyframes bell-shake {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0); }
 }
-<!-- ✅ SweetAlert Animation Styles -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+.bell-alert { animation: bell-shake 0.5s ease-in-out; }
 
-<style>
+/* SweetAlert Gold Theme */
 .swal2-popup.gold-popup {
   border: 2px solid rgba(255, 215, 0, 0.4);
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.25);
@@ -141,7 +146,6 @@ body {
 .swal2-title {
   color: gold !important;
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
-  font-family: 'Poppins', sans-serif;
 }
 .gold-btn {
   background: linear-gradient(90deg, #cfa842, #a87a1b);
@@ -149,37 +153,12 @@ body {
   border-radius: 8px !important;
   font-weight: 600;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  transition: all 0.3s ease-in-out;
 }
 .gold-btn:hover {
   background: linear-gradient(90deg, #ffce50, #b98a1d);
   transform: translateY(-2px);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
-.badge {
-    font-size: 13px;
-    padding: 4px 7px;
-    animation: popBadge .4s ease;
-}
-
-@keyframes popBadge {
-    from { transform: scale(0.6); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-    @keyframes bell-shake {
-  0% { transform: rotate(0); }
-  25% { transform: rotate(15deg); }
-  50% { transform: rotate(-15deg); }
-  75% { transform: rotate(10deg); }
-  100% { transform: rotate(0); }
-}
-
-.bell-alert {
-  animation: bell-shake 0.5s ease-in-out;
-}
-
-</style>
-
 </style>
 </head>
 
@@ -191,72 +170,58 @@ body {
 <div class="gold-navbar d-flex justify-content-between align-items-center">
 
     <div class="d-flex align-items-center">
-        <img src="{% static 'images/hifas_logo.png' %}" 
-            alt="Hifas Jewellery"
-            style="height:42px; margin-right:10px; border-radius:5px;">
+        <img src="{% static 'images/hifas_logo.png' %}" style="height:42px;border-radius:5px;" class="me-2">
         <div class="fw-bold">
-            Digital Gold Trade<br>
+            Digital Gold Trade <br>
             <small style="font-size:13px; color:#4a3809;">Hifas Jewellery</small>
         </div>
     </div>
 
     <div class="d-flex align-items-center gap-3">
-
-        <!-- ✅ Gold Price Ticker -->
-        <div id="gold-ticker"
-             class="px-3 py-1 fw-bold"
-             style="background:#fff8d9; border-radius:6px; border:1px solid #d4b342; font-size:14px;">
-            ⏳ Loading Gold Prices...
+        
+        <!-- Gold Price -->
+        <div id="gold-ticker" class="px-3 py-1 fw-bold"
+             style="background:#fff8d9;border-radius:6px;border:1px solid #d4b342;">
+             ⏳ Loading Gold Prices...
         </div>
 
-<!-- Wallet Switch -->
-<div class="dropdown">
-  <button class="btn wallet-switch-btn dropdown-toggle d-flex align-items-center px-3 py-2"
-          data-bs-toggle="dropdown"
-          style="border-radius:8px;">
+        <!-- Wallet Switch -->
+        <div class="dropdown">
+            <button class="btn wallet-switch-btn dropdown-toggle d-flex align-items-center px-3 py-2"
+                    data-bs-toggle="dropdown">
 
-    {% if is_demo %}
-      🧪 <span class="badge bg-warning text-dark ms-2">Demo Wallet</span>
-    {% else %}
-      💳 <span class="badge bg-success ms-2">Real Wallet</span>
-    {% endif %}
-  </button>
+                {% if is_demo %}
+                    🧪 <span class="badge bg-warning text-dark ms-2">Demo Wallet</span>
+                {% else %}
+                    💳 <span class="badge bg-success ms-2">Real Wallet</span>
+                {% endif %}
+            </button>
 
-  <ul class="dropdown-menu dropdown-menu-end">
-      <li><a class="dropdown-item" href="{% url 'switch_wallet' 'real' %}?next={{ request.path }}">💳 Real Wallet</a></li>
-      <li><a class="dropdown-item" href="{% url 'switch_wallet' 'demo' %}?next={{ request.path }}">🧪 Demo Wallet</a></li>
-  </ul>
-</div>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'switch_wallet' 'real' %}?next={{ request.path }}">💳 Real Wallet</a></li>
+                <li><a class="dropdown-item" href="{% url 'switch_wallet' 'demo' %}?next={{ request.path }}">🧪 Demo Wallet</a></li>
+            </ul>
+        </div>
 
+        <span class="gold-user ms-2">👑 {{ request.user.username|title }}</span>
 
-<span class="gold-user ms-2">👑 {{ request.user.username|title }}</span>
+        <!-- Notification Bell -->
         <div class="position-relative me-3">
-  <span id="notif-bell" style="font-size:25px; cursor:pointer;">
-    🔔
-  </span>
+            <span id="notif-bell" style="font-size:25px; cursor:pointer;">🔔</span>
+            <span id="notif-badge" class="badge bg-danger position-absolute top-0 start-100 translate-middle"
+                  style="display:none;border-radius:50%;padding:5px 8px;"></span>
+        </div>
 
-  <span id="notif-badge" 
-        class="badge bg-danger position-absolute top-0 start-100 translate-middle"
-        style="display:none; border-radius:50%; padding:5px 8px;">
-  </span>
-</div>
+        <a href="{% url 'logout' %}" class="text-danger fw-bold">Logout</a>
 
-<a href="{% url 'logout' %}" class="ms-2 text-danger fw-bold">Logout</a>
-        
-<img src="{{ request.user.userprofile.picture_url }}"
-     class="rounded-circle"
-     alt="{{ request.user.username }}'s Profile Picture"
-     style="width:40px;height:40px;object-fit:cover;border:2px solid gold;">
-  
+        <img src="{{ request.user.userprofile.picture_url }}"
+             class="rounded-circle" style="width:40px; height:40px; object-fit:cover; border:2px solid gold;">
     </div>
-
 </div>
 {% endif %}
 
-
-<!-- ✅ LAYOUT -->
+<!-- Page Layout -->
 <div class="d-flex">
-
 {% if user.is_authenticated %}
 <div class="sidebar">
     <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">🏠 Dashboard</a>
@@ -269,22 +234,31 @@ body {
     <a href="{% url 'my_withdrawals' %}" class="{% if request.resolver_match.url_name == 'my_withdrawals' %}active{% endif %}">🧾 My Withdrawals</a>
     <a href="{% url 'kyc_form' %}" class="{% if request.resolver_match.url_name == 'kyc_form' %}active{% endif %}">📝 KYC Verification</a>
 
-{% if request.user.is_staff %}
+    {% if request.user.is_staff %}
     <a href="{% url 'update_rate' %}" class="{% if request.resolver_match.url_name == 'update_rate' %}active{% endif %}">⚙️ Update Rate</a>
-    <a href="{% url 'staff_deposits' %}" class="{% if request.resolver_match.url_name == 'staff_deposits' %}active{% endif %}">🛡️ Staff Deposits{% if pending_deposits_count > 0 %}<span class="badge bg-danger ms-2">{{ pending_deposits_count }}</span>{% endif %}</a>
+    <a href="{% url 'staff_deposits' %}" class="{% if request.resolver_match.url_name == 'staff_deposits' %}active{% endif %}">
+        🛡️ Staff Deposits {% if pending_deposits_count > 0 %}<span class="badge bg-danger ms-2">{{ pending_deposits_count }}</span>{% endif %}
+    </a>
     <a href="{% url 'kyc_admin_list' %}" class="{% if request.resolver_match.url_name == 'kyc_admin_list' %}active{% endif %}">🛡️ KYC Verification</a>
-    <a href="{% url 'staff_withdrawals' %}" class="{% if request.resolver_match.url_name == 'staff_withdrawals' %}active{% endif %}">🏛️ Staff Withdrawals{% if pending_withdrawals_count > 0 %}<span class="badge bg-warning text-dark ms-2">{{ pending_withdrawals_count }}</span>{% endif %}</a>
-{% endif %}
+    <a href="{% url 'staff_withdrawals' %}" class="{% if request.resolver_match.url_name == 'staff_withdrawals' %}active{% endif %}">
+        🏛️ Staff Withdrawals {% if pending_withdrawals_count > 0 %}<span class="badge bg-warning text-dark ms-2">{{ pending_withdrawals_count }}</span>{% endif %}
+    </a>
+    {% endif %}
 </div>
 {% endif %}
 
 <div class="content flex-grow-1 p-4">
     {% block content %}{% endblock %}
 </div>
-
 </div>
-{% if user.is_authenticated %}
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+/* Gold Price Fetcher */
 function fetchGoldRates() {
     fetch("{% url 'refresh_rates' %}")
         .then(res => res.json())
@@ -299,40 +273,29 @@ function fetchGoldRates() {
 }
 fetchGoldRates();
 setInterval(fetchGoldRates, 10000);
-</script>
-{% endif %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- ✅ SweetAlert2 (Animated Popups) -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
+/* SweetAlert Message Handling */
 {% if messages %}
   {% for message in messages %}
     Swal.fire({
-      title: `{% if message.tags == 'success' %}🎉 Success!{% else %}⚠️ Oops!{% endif %}`,
+      title: `{% if message.tags == 'success' %}🎉 Success!{% else %}⚠️ Alert!{% endif %}`,
       html: `{{ message|escapejs }}`,
-      icon: `{% if message.tags == 'success' %}success{% else %}error{% endif %}`,
+      icon: `{% if message.tags == 'success' %}success{% else %}warning{% endif %}`,
       background: '#0d1221',
       color: 'gold',
       iconColor: `{% if message.tags == 'success' %}#ffd700{% else %}#ff5252{% endif %}`,
       confirmButtonText: 'OK',
       confirmButtonColor: '#d4af37',
-      showClass: {
-        popup: 'animate__animated animate__zoomIn animate__faster'
-      },
-      hideClass: {
-        popup: 'animate__animated animate__fadeOut animate__faster'
-      },
-      customClass: {
-        popup: 'gold-popup',
-        confirmButton: 'gold-btn'
-      },
+      showClass: { popup: 'animate__animated animate__zoomIn animate__faster' },
+      hideClass: { popup: 'animate__animated animate__fadeOut animate__faster' },
+      customClass: { popup: 'gold-popup', confirmButton: 'gold-btn' },
     });
   {% endfor %}
 {% endif %}
 </script>
+
 <script>
+/* STAFF LIVE NOTIFICATIONS */
 let lastTotal = 0;
 
 function checkNotifications() {
@@ -340,41 +303,29 @@ function checkNotifications() {
         .then(res => res.json())
         .then(data => {
             let total = data.deposits + data.withdrawals;
-
-            const badge = document.getElementById("notif-badge");
             const bell = document.getElementById("notif-bell");
+            const badge = document.getElementById("notif-badge");
 
             if (total > 0) {
                 badge.style.display = "inline-block";
                 badge.innerHTML = total;
 
-                // Bell animation on new notification
                 if (total > lastTotal) {
                     bell.classList.add("bell-alert");
-
-                    setTimeout(() => {
-                        bell.classList.remove("bell-alert");
-                    }, 600);
-
-                    // 🔊 Optional sound
+                    setTimeout(() => bell.classList.remove("bell-alert"), 600);
                     playNotifSound();
                 }
-
             } else {
                 badge.style.display = "none";
             }
-
             lastTotal = total;
-        })
-        .catch(err => console.error("Notification error:", err));
+        });
 }
 
-// Run every 10 seconds
 setInterval(checkNotifications, 10000);
-
-// Run on page load
 checkNotifications();
-// 🔊 OPTIONAL: Notification sound
+
+/* Optional Notification Sound */
 function playNotifSound() {
     const snd = new Audio("{% static 'sounds/notify.mp3' %}");
     snd.play().catch(() => {});
