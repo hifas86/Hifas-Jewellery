@@ -3,7 +3,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('goldtrade', '0010_alter_bankdeposit_user_alter_goldrate_buy_rate_and_more'),
+        ('goldtrade', '0011_auto_20251121_1359'),
     ]
 
     operations = [
